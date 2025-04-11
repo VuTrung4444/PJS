@@ -237,6 +237,8 @@ local hopCooldown = 5
 
 local isTeleporting = false
 
+local currentJobId = game.JobId 
+
 local function hopToLowPopServer()
     if isTeleporting then return end
 
@@ -248,18 +250,19 @@ local function hopToLowPopServer()
 
     if success and servers and servers.data then
         for _, server in ipairs(servers.data) do
-            local playerCount = server.playing
             local serverId = server.id
+            local playerCount = server.playing
 
-            if playerCount >= 1 and playerCount <= 2 and not visitedServers[serverId] then
+            if serverId ~= currentJobId and playerCount >= 1 and playerCount <= 2 and not visitedServers[serverId] then
                 visitedServers[serverId] = true
-                isTeleporting = true -- ngăn spam
+                isTeleporting = true
                 TeleportService:TeleportToPlaceInstance(placeId, serverId, localPlayer)
                 break
             end
         end
     end
 end
+
 
 
 -- Gắn vào toggle
@@ -310,3 +313,74 @@ MainSection:AddToggle({
 })
 
 
+--// Settings \\--
+Settings:AddDropdown({
+    Name = "Farm Method",
+    List = {"Above","Behind","Below"},
+    Flag = "FarmMethodSelection",
+    Nothing = "Select Method...",
+	Value = "Above",
+    Callback = function(Chosen)
+        FarmMethod = Chosen 
+    end
+})
+
+Settings:AddSlider({
+    Name = "Distance",
+    Flag = "DistanceSlider",
+    Value = 10,
+    Min = 1,
+    Max = 200,
+    Textbox = true,
+    Callback = function(Value)
+        getgenv().Distance = Value
+    end
+})
+
+Settings:AddSlider({
+    Name = "Tween Speed",
+    Flag = "TweenSlider",
+    Value = 300,
+    Min = 150,
+    Max = 500,
+    Textbox = true,
+    Callback = function(Value)
+        getgenv().tweenspeed = Value
+    end
+})
+
+SpeedAndJump:AddSlider({
+    Name = "WalkSpeed",
+    Value = 280,
+    Min = 16,
+    Max = 300,
+    Flag = "WalkSpeed",
+	Textbox = true,
+    Callback = function(State)
+        WalkSpeed = State
+        if game.Players.LocalPlayer.Character then
+            local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = WalkSpeed
+            end
+        end
+    end
+})
+
+SpeedAndJump:AddSlider({
+    Name = "JumpPower",
+    Value = 150,
+    Min = 50,
+    Max = 1000,
+    Flag = "JumpPower",
+	Textbox = true,
+    Callback = function(State)
+        JumpPower = State
+        if game.Players.LocalPlayer.Character then
+            local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = JumpPower
+            end
+        end
+    end
+})
