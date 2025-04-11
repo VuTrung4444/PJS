@@ -203,7 +203,7 @@ local Subs = library.subs
 local IsOpen = Subs.Wait
 
 local Window = library:CreateWindow({
-    Name = "HackerLor | DMM DianaVsRice",
+    Name = "HackerLor | GhoulNoob",
     Themeable = {
         Info = "VTrungHackerLor",
         Credit = false,
@@ -235,7 +235,11 @@ local localPlayer = Players.LocalPlayer
 local visitedServers = {}
 local hopCooldown = 5
 
+local isTeleporting = false
+
 local function hopToLowPopServer()
+    if isTeleporting then return end
+
     local success, servers = pcall(function()
         return HttpService:JSONDecode(
             game:HttpGet("https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100")
@@ -249,12 +253,14 @@ local function hopToLowPopServer()
 
             if playerCount >= 1 and playerCount <= 2 and not visitedServers[serverId] then
                 visitedServers[serverId] = true
+                isTeleporting = true -- ngăn spam
                 TeleportService:TeleportToPlaceInstance(placeId, serverId, localPlayer)
-                return
+                break
             end
         end
     end
 end
+
 
 -- Gắn vào toggle
 local hopEnabled = false
@@ -274,5 +280,33 @@ MiscSection:AddToggle({
     end
 })
 
+local autoQuest = false
+
+MainSection:AddToggle({
+    Name = "Auto Accept Quest",
+    Flag = "AutoQuestToggle",
+    Callback = function(v)
+        autoQuest = v
+        if autoQuest then
+            task.spawn(function()
+                while autoQuest do
+                    local replicatedStorage = game:GetService("ReplicatedStorage")
+                    local playerData = replicatedStorage:WaitForChild("Player_Data")
+                    local localPlayer = game:GetService("Players").LocalPlayer
+                    local currentQuest = playerData:WaitForChild(localPlayer.Name):FindFirstChild("Quest")
+
+                    if currentQuest and currentQuest.Value == "" then
+                        replicatedStorage:WaitForChild("Remotes")
+                            :WaitForChild("To_Server")
+                            :WaitForChild("Accept_Quest")
+                            :FireServer()
+                    end
+
+                    task.wait(2)
+                end
+            end)
+        end
+    end
+})
 
 
