@@ -283,35 +283,6 @@ MiscSection:AddToggle({
     end
 })
 
-local autoQuest = false
-
-MainSection:AddToggle({
-    Name = "Auto Accept Quest",
-    Flag = "AutoQuestToggle",
-    Callback = function(v)
-        autoQuest = v
-        if autoQuest then
-            task.spawn(function()
-                while autoQuest do
-                    local replicatedStorage = game:GetService("ReplicatedStorage")
-                    local playerData = replicatedStorage:WaitForChild("Player_Data")
-                    local localPlayer = game:GetService("Players").LocalPlayer
-                    local currentQuest = playerData:WaitForChild(localPlayer.Name):FindFirstChild("Quest")
-
-                    if currentQuest and currentQuest.Value == "" then
-                        replicatedStorage:WaitForChild("Remotes")
-                            :WaitForChild("To_Server")
-                            :WaitForChild("Accept_Quest")
-                            :FireServer()
-                    end
-
-                    task.wait(2)
-                end
-            end)
-        end
-    end
-})
-
 
 --// Settings \\--
 Settings:AddDropdown({
@@ -381,6 +352,84 @@ SpeedAndJump:AddSlider({
             if humanoid then
                 humanoid.JumpPower = JumpPower
             end
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local autoQuest = false
+local fixedPosition = Vector3.new(7693.7041, 26.34376, -692.12549)
+
+MainSection:AddToggle({
+    Name = "Auto Accept Quest (Simulated Click)",
+    Flag = "AutoQuestSimClick",
+    Callback = function(v)
+        autoQuest = v
+        if autoQuest then
+            task.spawn(function()
+                while autoQuest do
+                    local missionBoards = workspace:FindFirstChild("MissionBoards")
+                    local ccg = missionBoards and missionBoards:FindFirstChild("CCG")
+
+                    local chosenBoard = nil
+                    if ccg then
+                        for _, child in ipairs(ccg:GetChildren()) do
+                            local pos = nil
+                            if child:IsA("BasePart") then
+                                pos = child.Position
+                            elseif child:IsA("Model") then
+                                local mainPart = child.PrimaryPart or child:FindFirstChildWhichIsA("BasePart")
+                                pos = mainPart and mainPart.Position
+                            end
+
+                            if pos and (pos - fixedPosition).Magnitude < 0.1 then
+                                chosenBoard = child
+                                break
+                            end
+                        end
+                    end
+
+                    local holder = chosenBoard and chosenBoard:FindFirstChild("Holder")
+
+                    if holder then
+                        local clicked = false
+                        for i = 1, 10 do
+                            if clicked then break end -- ngưng ngay sau khi đã click 1 lần
+
+                            local part = holder:FindFirstChild(tostring(i))
+                            local gui = part and part:FindFirstChild("SurfaceGui")
+                            local rating = gui and gui:FindFirstChild("Rating")
+
+                            if rating and rating:IsA("TextLabel") and rating.Text == "Hard" then
+                                print("[AutoQuest] ✅ Found HARD quest at slot [" .. i .. "]")
+
+                                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                                if onScreen then
+                                    VirtualInputManager:SendMouseButtonEvent(
+                                        screenPos.X, screenPos.Y,
+                                        0, true, game, 0
+                                    )
+                                    VirtualInputManager:SendMouseButtonEvent(
+                                        screenPos.X, screenPos.Y,
+                                        0, false, game, 0
+                                    )
+                                    print("[AutoQuest] 🖱️ Clicked at screen position", screenPos)
+                                else
+                                    warn("[AutoQuest] ❌ Part not on screen, can't click")
+                                end
+
+                                clicked = true
+                            end
+                        end
+                    end
+
+                    task.wait(2)
+                end
+            end)
         end
     end
 })
