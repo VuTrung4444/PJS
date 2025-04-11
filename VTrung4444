@@ -1,0 +1,278 @@
+local Library = loadstring(game:GetObjects("rbxassetid://7657867786")[1].Source)()
+local Subs = Library.subs
+local IsOpen = Subs.Wait
+
+--// Variables \\--
+local plr = game:GetService("Players").LocalPlayer
+
+local function updateCharacterReferences(character)
+	local hrp = character:WaitForChild("HumanoidRootPart")
+		_G.Character = character
+		_G.HumanoidRootPart = hrp
+end
+	if plr.Character then
+		updateCharacterReferences(plr.Character)
+	end
+	plr.CharacterAdded:Connect(function(character)
+    updateCharacterReferences(character)
+end)
+
+local insert = table.insert 
+local character = plr.Character
+local PlrHumanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local plr = game.Players.LocalPlayer
+local Character = plr.Character or plr.CharacterAdded:Wait()	
+local Humanoid = Character and Character:WaitForChild("Humanoid")
+local WalkSpeed = 150
+local JumpPower = 150
+
+plr.CharacterAdded:Connect(function(Char)
+    Character = Char
+    Humanoid = Character:WaitForChild("Humanoid")
+
+    -- Cập nhật tốc độ và sức bật ngay khi nhân vật xuất hiện
+    if WalkSpeed then
+        Humanoid.WalkSpeed = WalkSpeed
+    end
+    if JumpPower then
+        Humanoid.JumpPower = JumpPower
+    end
+end)
+
+game:GetService("RunService").Stepped:Connect(function()
+    if Character and Humanoid then
+        -- Giữ tốc độ chạy cố định
+        if Humanoid.WalkSpeed ~= WalkSpeed then
+            Humanoid.WalkSpeed = WalkSpeed
+        end
+        
+        -- Giữ sức bật cố định
+        if Humanoid.JumpPower ~= JumpPower then
+            Humanoid.JumpPower = JumpPower
+        end
+    end
+end)
+
+plr.CharacterAdded:Connect(function(Char)
+    Character = Char
+    Humanoid = Character:WaitForChild("Humanoid")
+
+    -- Đặt lại tốc độ ngay lập tức
+    task.wait(0.1) -- Chờ game cập nhật xong
+    Humanoid.WalkSpeed = WalkSpeed
+    Humanoid.JumpPower = JumpPower
+end)
+
+--// Tween \\--
+local function GetDistance(Endpoint)
+    if typeof(Endpoint) == "Instance" then
+        Endpoint = Vector3.new(Endpoint.Position.X, game.Players.LocalPlayer.Character.HumanoidRootPart.Position.Y, Endpoint.Position.Z)
+    elseif typeof(Endpoint) == "CFrame" then
+        Endpoint = Vector3.new(Endpoint.Position.X, game.Players.LocalPlayer.Character.HumanoidRootPart.Position.Y, Endpoint.Position.Z)
+    end
+    local Magnitude = (Endpoint - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    return Magnitude
+end
+
+function Tween(Endpoint)
+  if typeof(Endpoint) == "Instance" then
+        Endpoint = Endpoint.CFrame
+    end
+    local TweenFunc = {}
+    local Distance = GetDistance(Endpoint)
+    local TweenInfo = TweenInfo.new(Distance / getgenv().tweenspeed, Enum.EasingStyle.Linear)
+
+    local targetCFrame = Endpoint
+
+    -- Giữ nguyên hướng nhìn khi ở chế độ "Above" hoặc "Below"
+    if FarmMethod == "Above" then
+        targetCFrame = CFrame.new(Endpoint.Position) * CFrame.Angles(math.rad(-90), 0, 0)
+    elseif FarmMethod == "Below" then
+        targetCFrame = CFrame.new(Endpoint.Position) * CFrame.Angles(math.rad(90), 0, 0)
+    end
+
+    local TweenObj = game:GetService("TweenService"):Create(
+        game.Players.LocalPlayer.Character.HumanoidRootPart, 
+        TweenInfo, 
+        { CFrame = targetCFrame }
+    )
+    TweenObj:Play()
+
+    function TweenFunc:Cancel()
+        TweenObj:Cancel()
+        return false
+    end
+
+    if Distance <= 100 then
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetCFrame
+        TweenObj:Cancel()
+        return false
+    end
+
+    return TweenFunc
+end
+
+local function EnableAntiFall()
+    local plr = game.Players.LocalPlayer
+    if not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+
+    local humanoidRootPart = plr.Character.HumanoidRootPart
+    if not humanoidRootPart:FindFirstChild("BodyVelocity") then
+        local antifall = Instance.new("BodyVelocity")
+        antifall.Velocity = Vector3.new(0, 0, 0)
+        antifall.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        antifall.Name = "BodyVelocity"
+        antifall.Parent = humanoidRootPart
+    end
+end
+
+local function DisableAntiFall()
+    local plr = game.Players.LocalPlayer
+    if not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+
+    local humanoidRootPart = plr.Character.HumanoidRootPart
+    local humanoid = plr.Character:FindFirstChildOfClass("Humanoid")
+    local antifall = humanoidRootPart:FindFirstChild("BodyVelocity")
+
+    -- Xóa lực AntiFall nếu tồn tại
+    if antifall then
+        antifall:Destroy()
+        task.wait(0.1) -- Chờ một chút để chắc chắn rằng BodyVelocity đã bị xóa
+    end
+
+    -- Đặt lại vận tốc để tránh bị giữ lại bởi lực cũ
+    humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+    humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+
+    -- Đảm bảo nhân vật có thể di chuyển
+    if humanoid then
+        humanoid.PlatformStand = false  -- Ngăn trạng thái đứng yên cứng
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)  -- Đưa nhân vật về trạng thái bình thường
+        task.wait(0.1)  -- Chờ một chút để trạng thái được cập nhật
+
+        -- Nhảy ngay lập tức để kiểm tra xem có bị khóa không
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end
+
+
+--// Get Closest \\---
+function IsEntitySelected(entity, selectedEntities)
+    for _, selectedEntity in ipairs(selectedEntities) do
+        if entity.Name == selectedEntity then
+            return true
+        end
+    end
+    return false
+end
+
+
+
+function getclosest(selectedEntities, parentFolder)
+    local closestEntity = nil
+    local closestDistance = math.huge
+
+    local entities = parentFolder:GetDescendants()
+
+    for i, entity in ipairs(entities) do
+        if entity:IsA("Model") and IsEntitySelected(entity, selectedEntities) then
+            local entityName = entity.Name
+            local humanoid = entity:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                local entityCFrame = entity:GetModelCFrame()
+                local distance = (entityCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestEntity = entity
+                end
+            end
+        end
+    end
+
+    return closestEntity
+end
+
+--// Main Script \\--
+local library = loadstring(game:GetObjects("rbxassetid://7657867786")[1].Source)()
+local Subs = library.subs
+local IsOpen = Subs.Wait
+
+local Window = library:CreateWindow({
+    Name = "HackerLor | DMM DianaVsRice",
+    Themeable = {
+        Info = "VTrungHackerLor",
+        Credit = false,
+        Background = "",
+        Visible = true
+    }
+})
+
+--// Main Tab \\--
+local MainTab = Window:CreateTab({Name = "Main"})
+local MainSection = MainTab:CreateSection({Name = "Farming"})
+local Settings = MainTab:CreateSection({Name = "Settings"})
+local KillAura = MainTab:CreateSection({Name = "Kill Aura", Side = "Right"})
+
+
+--// Misc Tab \\--
+local MiscTab = Window:CreateTab({Name = "Misc"})
+local MiscSection = MiscTab:CreateSection({Name = "Misc"})
+local SpeedAndJump = MiscTab:CreateSection({Name = "Speed&Jump", Side = "Right"})
+local Ect = MiscTab:CreateSection({Name = "Ect", Side = "Left"})
+
+--ServerHop--
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+
+local placeId = game.PlaceId
+local localPlayer = Players.LocalPlayer
+local visitedServers = {}
+local hopCooldown = 5
+
+local function hopToLowPopServer()
+    local success, servers = pcall(function()
+        return HttpService:JSONDecode(
+            game:HttpGet("https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100")
+        )
+    end)
+
+    if success and servers and servers.data then
+        for _, server in ipairs(servers.data) do
+            local playerCount = server.playing
+            local serverId = server.id
+
+            if playerCount >= 1 and playerCount <= 2 and not visitedServers[serverId] then
+                visitedServers[serverId] = true
+                TeleportService:TeleportToPlaceInstance(placeId, serverId, localPlayer)
+                return
+            end
+        end
+    end
+end
+
+-- Gắn vào toggle
+local hopEnabled = false
+MiscSection:AddToggle({
+    Name = "Server Hop",
+    Flag = "AutoHop",
+    Callback = function(v)
+        hopEnabled = v
+        if hopEnabled then
+            task.spawn(function()
+                while hopEnabled do
+                    hopToLowPopServer()
+                    task.wait(hopCooldown)
+                end
+            end)
+        end
+    end
+})
+
+
+
