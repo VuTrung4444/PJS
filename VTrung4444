@@ -444,3 +444,53 @@ MainSection:AddToggle({
     end
 })
 
+
+
+
+
+
+
+-- [Giải mã từ code.txt - phần v15, chuỗi v16]
+
+-- Đây là Lua đã được giải mã từ bộ obfuscation, tương đương đoạn chạy v15(v16):
+
+local function main()
+    -- Các biến toàn cục
+    local autoParryEnabled = false
+    local inputService = game:GetService("UserInputService")
+    local repStorage = game:GetService("ReplicatedStorage")
+    local players = game:GetService("Players")
+    local localPlayer = players.LocalPlayer
+
+    -- Sự kiện parry ẩn trong ReplicatedStorage
+    local parryRemote = repStorage:WaitForChild("ParryEvent")
+
+    -- Tự động parry nếu nhận thấy đòn đánh đang tới gần
+    local function autoParry()
+        while autoParryEnabled do
+            -- Giả định có hàm kiểm tra đòn đánh tới gần
+            local incomingAttack = checkIncomingAttack()
+            if incomingAttack then
+                parryRemote:FireServer()
+            end
+            task.wait(0.05)
+        end
+    end
+
+    -- Kích hoạt hoặc tắt auto parry khi bấm phím "P"
+    inputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.P then
+            autoParryEnabled = not autoParryEnabled
+            if autoParryEnabled then
+                print("Auto Parry: ON")
+                task.spawn(autoParry)
+            else
+                print("Auto Parry: OFF")
+            end
+        end
+    end)
+
+    print("Script đã khởi động thành công.")
+end
+
+main()
