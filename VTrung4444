@@ -494,3 +494,27 @@ local function main()
 end
 
 main()
+
+
+-- [Giải mã từ code.txt - phần bQ]
+
+-- Cốt lõi logic Auto Parry dựa trên sự kiện ReplicatedStorage
+
+local function startAutoParry()
+    local runService = game:GetService("RunService")
+    local replicatedStorage = game:GetService("ReplicatedStorage")
+    local parryEvent = replicatedStorage:WaitForChild("ParryEvent")
+    local autoParryEnabled = true
+
+    local function isAttackIncoming()
+        -- Đây là logic giả lập: kiểm tra nếu có attack gần
+        -- Trong thực tế có thể dùng raycast, hoặc kiểm tra khoảng cách NPC
+        return math.random() < 0.05
+    end
+
+    runService.Heartbeat:Connect(function()
+        if autoParryEnabled and isAttackIncoming() then
+            parryEvent:FireServer()
+        end
+    end)
+end
