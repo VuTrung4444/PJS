@@ -507,7 +507,7 @@ MainSection:AddToggle({
         Humanoid.PlatformStand = true
         print("🕊️ Bật PlatformStand (bay).")
 
-        -- Kiểm tra blade
+        -- Kiểm tra blade và ẩn blade nếu cần
         local entityName = LocalPlayer.Name
         local playerEntity = workspace.Entities:FindFirstChild(entityName)
         if playerEntity and playerEntity:FindFirstChild("Weapon") and playerEntity.Weapon:FindFirstChild("Blade") then
@@ -545,49 +545,55 @@ MainSection:AddToggle({
             return
         end
 
-        -- Kiểm tra điều kiện
-        local distance = (HRP.Position - targetPart.Position).Magnitude
-        local healthPercent = Humanoid.Health / Humanoid.MaxHealth * 100
-        print("📊 Health:", healthPercent, "Distance:", distance)
+        -- Vòng lặp kiểm tra điều kiện và di chuyển liên tục
+        while tweenToTatara do
+            -- Kiểm tra điều kiện
+            local distance = (HRP.Position - targetPart.Position).Magnitude
+            local healthPercent = Humanoid.Health / Humanoid.MaxHealth * 100
+            print("📊 Health:", healthPercent, "Distance:", distance)
 
-        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
-        local goalCFrame
+            local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+            local goalCFrame
 
-        if healthPercent >= 90 and distance > 50 then
-            goalCFrame = targetPart.CFrame + Vector3.new(0, -15, 2)
-            print("✈️ Bay đến boss (máu khỏe và đủ xa).")
-        elseif healthPercent <= 75 then
-            goalCFrame = CFrame.new(HRP.Position.X, -1000, HRP.Position.Z)
-            print("🔻 Bay xuống sâu vì máu <= 75%.")
-        else
-            print("⚠️ Không đủ điều kiện để tween.")
-            return
+            -- Điều kiện di chuyển đến boss hoặc bay xuống sâu
+            if healthPercent >= 90 and distance > 50 then
+                goalCFrame = targetPart.CFrame + Vector3.new(0, -15, 2)
+                print("✈️ Bay đến boss (máu khỏe và đủ xa).")
+            elseif healthPercent <= 75 then
+                goalCFrame = CFrame.new(HRP.Position.X, -1000, HRP.Position.Z)
+                print("🔻 Bay xuống sâu vì máu <= 75%.")
+            else
+                goalCFrame = HRP.CFrame  -- Giữ nguyên vị trí nếu không đủ điều kiện
+                print("⚠️ Không đủ điều kiện để tween, nhưng vẫn duy trì trạng thái bay.")
+            end
+
+            -- Tween trước, rồi mới khóa tại chỗ
+            local tween = TweenService:Create(HRP, tweenInfo, {CFrame = goalCFrame})
+            tween:Play()
+            tween.Completed:Wait()
+
+            print("✅ Tween hoàn tất.")
+
+            -- Đóng băng sau khi tween
+            if floatAttachment then
+                floatAttachment:Destroy()
+            end
+
+            -- Tạo trạng thái bay bằng BodyGyro & BodyVelocity
+            floatAttachment = Instance.new("BodyGyro")
+            floatAttachment.MaxTorque = Vector3.new(400000, 400000, 400000)  -- Cân bằng với các lực xoay
+            floatAttachment.CFrame = HRP.CFrame
+            floatAttachment.Parent = HRP
+
+            local bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nguyên vị trí trên không
+            bodyVelocity.Parent = HRP
+
+            print("📍 Nhân vật đã được giữ cố định trong trạng thái bay.")
+
+            -- Cập nhật vị trí của nhân vật theo boss sau mỗi lần kiểm tra điều kiện
+            task.wait(0.5)  -- Cập nhật mỗi nửa giây hoặc có thể điều chỉnh theo nhu cầu
         end
-
-        -- Tween trước, rồi mới khóa tại chỗ
-        local tween = TweenService:Create(HRP, tweenInfo, {CFrame = goalCFrame})
-        tween:Play()
-        tween.Completed:Wait()
-
-        print("✅ Tween hoàn tất.")
-
-        -- Đóng băng sau khi tween
-        if floatAttachment then
-            floatAttachment:Destroy()
-        end
-
-        -- Tạo trạng thái bay bằng BodyGyro & BodyVelocity
-        floatAttachment = Instance.new("BodyGyro")
-        floatAttachment.MaxTorque = Vector3.new(400000, 400000, 400000)  -- Cân bằng với các lực xoay
-        floatAttachment.CFrame = HRP.CFrame
-        floatAttachment.Parent = HRP
-
-        local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nguyên vị trí trên không
-        bodyVelocity.Parent = HRP
-
-        print("📍 Nhân vật đã được giữ cố định trong trạng thái bay.")
     end
 })
-
