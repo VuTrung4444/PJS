@@ -444,77 +444,52 @@ MainSection:AddToggle({
     end
 })
 
+--// Auto Block / Auto Parry \\--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local ParryEvent = ReplicatedStorage:WaitForChild("ParryEvent")
 
+local autoBlockEnabled = false
+local autoBlockConnection
 
-
-
-
-
--- [Giải mã từ code.txt - phần v15, chuỗi v16]
-
--- Đây là Lua đã được giải mã từ bộ obfuscation, tương đương đoạn chạy v15(v16):
-
-local function main()
-    -- Các biến toàn cục
-    local autoParryEnabled = false
-    local inputService = game:GetService("UserInputService")
-    local repStorage = game:GetService("ReplicatedStorage")
-    local players = game:GetService("Players")
-    local localPlayer = players.LocalPlayer
-
-    -- Sự kiện parry ẩn trong ReplicatedStorage
-    local parryRemote = repStorage:WaitForChild("ParryEvent")
-
-    -- Tự động parry nếu nhận thấy đòn đánh đang tới gần
-    local function autoParry()
-        while autoParryEnabled do
-            -- Giả định có hàm kiểm tra đòn đánh tới gần
-            local incomingAttack = checkIncomingAttack()
-            if incomingAttack then
-                parryRemote:FireServer()
-            end
-            task.wait(0.05)
-        end
-    end
-
-    -- Kích hoạt hoặc tắt auto parry khi bấm phím "P"
-    inputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.P then
-            autoParryEnabled = not autoParryEnabled
-            if autoParryEnabled then
-                print("Auto Parry: ON")
-                task.spawn(autoParry)
-            else
-                print("Auto Parry: OFF")
-            end
-        end
-    end)
-
-    print("Script đã khởi động thành công.")
+-- Giả lập logic phát hiện đòn đánh tới gần (có thể thay bằng raycast hoặc AI nâng cao)
+local function isAttackIncoming()
+    -- TODO: thay bằng real detection logic
+    return math.random() < 0.03
 end
 
-main()
+-- Hàm bắt đầu Auto Block
+local function startAutoBlock()
+    if autoBlockConnection then autoBlockConnection:Disconnect() end
 
-
--- [Giải mã từ code.txt - phần bQ]
-
--- Cốt lõi logic Auto Parry dựa trên sự kiện ReplicatedStorage
-
-local function startAutoParry()
-    local runService = game:GetService("RunService")
-    local replicatedStorage = game:GetService("ReplicatedStorage")
-    local parryEvent = replicatedStorage:WaitForChild("ParryEvent")
-    local autoParryEnabled = true
-
-    local function isAttackIncoming()
-        -- Đây là logic giả lập: kiểm tra nếu có attack gần
-        -- Trong thực tế có thể dùng raycast, hoặc kiểm tra khoảng cách NPC
-        return math.random() < 0.05
-    end
-
-    runService.Heartbeat:Connect(function()
-        if autoParryEnabled and isAttackIncoming() then
-            parryEvent:FireServer()
+    autoBlockConnection = RunService.Heartbeat:Connect(function()
+        if autoBlockEnabled and isAttackIncoming() then
+            ParryEvent:FireServer()
         end
     end)
 end
+
+-- Hàm dừng Auto Block
+local function stopAutoBlock()
+    if autoBlockConnection then
+        autoBlockConnection:Disconnect()
+        autoBlockConnection = nil
+    end
+end
+
+--// Add toggle vào MainSection của GUI \\--
+MainSection:AddToggle({
+    Name = "Auto Block / Parry",
+    Flag = "AutoBlockToggle",
+    Callback = function(state)
+        autoBlockEnabled = state
+        if state then
+            print("[AutoBlock] 🛡️ Bật")
+            startAutoBlock()
+        else
+            print("[AutoBlock] ❌ Tắt")
+            stopAutoBlock()
+        end
+    end
+})
+
