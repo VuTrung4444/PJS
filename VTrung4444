@@ -440,52 +440,38 @@ MainSection:AddToggle({
     end
 })
 
---// Auto Block / Auto Parry \\--
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local ParryEvent = ReplicatedStorage:WaitForChild("ParryEvent")
+local autoAttack = false
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
-local autoBlockEnabled = false
-local autoBlockConnection
-
--- Giả lập logic phát hiện đòn đánh tới gần (có thể thay bằng raycast hoặc AI nâng cao)
-local function isAttackIncoming()
-    -- TODO: thay bằng real detection logic
-    return math.random() < 0.03
-end
-
--- Hàm bắt đầu Auto Block
-local function startAutoBlock()
-    if autoBlockConnection then autoBlockConnection:Disconnect() end
-
-    autoBlockConnection = RunService.Heartbeat:Connect(function()
-        if autoBlockEnabled and isAttackIncoming() then
-            ParryEvent:FireServer()
-        end
-    end)
-end
-
--- Hàm dừng Auto Block
-local function stopAutoBlock()
-    if autoBlockConnection then
-        autoBlockConnection:Disconnect()
-        autoBlockConnection = nil
+-- Hàm thực hiện cả việc click chuột và nhấn phím R
+local function performAction()
+    for i = 1, 4 do
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+        task.wait(0.2)  -- Thời gian giữ chuột
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+        task.wait(0.5)  -- Chờ giữa các lần nhấn chuột
     end
+	task.wait(0.5)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+    task.wait(1.5)  -- Chờ sau khi nhấn phím R để tránh spam quá nhanh
 end
 
---// Add toggle vào MainSection của GUI \\--
+-- Toggle bật/tắt AutoAttack
 MainSection:AddToggle({
-    Name = "Auto Block / Parry",
-    Flag = "AutoBlockToggle",
+    Name = "AutoAttack",
+    Flag = "AutoAttack",
     Callback = function(state)
-        autoBlockEnabled = state
-        if state then
-            print("[AutoBlock] 🛡️ Bật")
-            startAutoBlock()
-        else
-            print("[AutoBlock] ❌ Tắt")
-            stopAutoBlock()
+        autoAttack = state
+        if autoAttack then
+            -- Khi toggle bật, chỉ sau đó mới bắt đầu vòng lặp
+            task.spawn(function()
+                while autoAttack do
+                    performAction()  -- Thực hiện cả click chuột và nhấn R
+                    task.wait(1.5)  -- Thời gian chờ giữa các vòng lặp
+                end
+            end)
         end
     end
 })
+
 
