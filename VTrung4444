@@ -474,10 +474,6 @@ MainSection:AddToggle({
     end
 })
 
-local tweenToTatara = false
-local noclip = false
-local floatAttachment
-
 MainSection:AddToggle({
     Name = "Tween To Tatara Boss",
     Default = false,
@@ -487,37 +483,39 @@ MainSection:AddToggle({
         local TweenService = game:GetService("TweenService")
         local Players = game:GetService("Players")
         local VirtualInputManager = game:GetService("VirtualInputManager")
-        local RunService = game:GetService("RunService") -- Để kiểm tra liên tục
+        local RunService = game:GetService("RunService")
 
         local LocalPlayer = Players.LocalPlayer
         local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-        local HRP = Character:WaitForChild("HumanoidRootPart")
         local Humanoid = Character:WaitForChild("Humanoid")
+        local HRP = Character:WaitForChild("HumanoidRootPart")
 
-        -- Nếu tắt toggle
         if not tweenToTatara then
-            Humanoid.PlatformStand = false
-            if floatAttachment then
-                floatAttachment:Destroy()
-                floatAttachment = nil
-            end
-            -- Tắt trạng thái noclip khi tắt toggle
+            if floatAttachment then floatAttachment:Destroy() end
             noclip = false
-            Character:WaitForChild("HumanoidRootPart").CanCollide = true  -- Bật va chạm
-            for _, part in pairs(Character:GetChildren()) do
+            Humanoid.PlatformStand = false
+
+            for _, part in pairs(Character:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    part.CanCollide = true  -- Bật va chạm lại cho các bộ phận
+                    part.CanCollide = true
                 end
             end
-            print("🛑 Đã hủy trạng thái bay và noclip.")
+
+            -- Tắt AntiFall khi dừng
+            DisableAntiFall()
             return
         end
 
-        -- Bật PlatformStand
+        -- Bật PlatformStand và noclip
         Humanoid.PlatformStand = true
-        print("🕊️ Bật PlatformStand (bay).")
+        noclip = true
+        for _, part in pairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
 
-        -- Kiểm tra blade
+        -- Mở Blade nếu chưa bật
         local entityName = LocalPlayer.Name
         local playerEntity = workspace.Entities:FindFirstChild(entityName)
         if playerEntity and playerEntity:FindFirstChild("Weapon") and playerEntity.Weapon:FindFirstChild("Blade") then
@@ -525,11 +523,10 @@ MainSection:AddToggle({
                 VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
                 task.wait(0.2)
                 VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                print("🎯 Blade ẩn, đã ấn phím E để bật.")
             end
         end
 
-        -- Tìm boss Tatara
+        -- Tìm Tatara boss
         local bossModel
         for _, entity in ipairs(workspace.Entities:GetChildren()) do
             if string.match(entity.Name, "^Tatara_") then
@@ -537,82 +534,121 @@ MainSection:AddToggle({
                 break
             end
         end
-
-        if not bossModel then
-            warn("❌ Không tìm thấy boss có tên bắt đầu bằng 'Tatara_'.")
-            return
-        end
+        if not bossModel then return end
 
         local bossRig = bossModel:FindFirstChild("TataraBossRig")
-        if not bossRig then
-            warn("❌ Không tìm thấy TataraBossRig trong bossModel.")
-            return
-        end
+        if not bossRig then return end
 
         local targetPart = bossRig.PrimaryPart or bossRig:FindFirstChild("HumanoidRootPart") or bossRig:FindFirstChildWhichIsA("BasePart")
-        if not targetPart then
-            warn("❌ Không tìm thấy phần chính để tween tới boss.")
-            return
-        end
+        if not targetPart then return end
 
-        -- Bật noclip khi bật tween tới boss
-        noclip = true
-        Humanoid.PlatformStand = true  -- Bật noclip
-        Character:WaitForChild("HumanoidRootPart").CanCollide = false  -- Tắt va chạm
-        for _, part in pairs(Character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false  -- Tắt va chạm của tất cả các bộ phận
+        -- Khởi động vòng lặp theo dõi
+        task.spawn(function()
+            local currentCharacter = Character
+            local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+
+            while tweenToTatara do
+                -- Kiểm tra nếu nhân vật đã thay đổi
+                if LocalPlayer.Character ~= currentCharacter then
+                    currentCharacter = LocalPlayer.Character
+                    Character = currentCharacter
+                    Humanoid = Character:WaitForChild("Humanoid")
+                    HRP = Character:WaitForChild("HumanoidRootPart")
+
+                    Humanoid.PlatformStand = true
+                    for _, part in pairs(Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+
+                -- Duy trì noclip
+                if noclip then
+                    for _, part in pairs(Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+
+                -- Enable AntiFall khi đang di chuyển tới boss
+                EnableAntiFall()
+
+                -- Mở Blade nếu chưa bật
+                if playerEntity and playerEntity:FindFirstChild("Weapon") and playerEntity.Weapon:FindFirstChild("Blade") then
+                    if playerEntity.Weapon.Blade.Transparency == 1 then
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                        task.wait(0.2)
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                    end
+                end
+
+                -- Kiểm tra máu và khoảng cách
+                local healthPercent = Humanoid.Health / Humanoid.MaxHealth * 100
+                local distance = (HRP.Position - targetPart.Position).Magnitude
+
+                if healthPercent < 75 then
+                    -- Nếu máu dưới 75%, tắt tween tới boss và teleport xuống the void
+                    isTweeningToBoss = false
+                    -- Teleport ra ngoài map khi máu dưới 75%
+                    local targetEntity = workspace.Entities:FindFirstChild(LocalPlayer.Name)
+
+                    -- Kiểm tra xem nhân vật có tồn tại không
+                    if targetEntity then
+                        -- Lấy HumanoidRootPart của nhân vật
+                        local HRP = targetEntity:WaitForChild("HumanoidRootPart")
+                        local Humanoid = targetEntity:WaitForChild("Humanoid")
+
+                        -- Bật noclip bằng cách tắt va chạm cho tất cả các phần của nhân vật
+                        for _, part in pairs(targetEntity:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.CanCollide = false
+                            end
+                        end
+
+                        -- Bật PlatformStand để tránh va chạm tự động
+                        Humanoid.PlatformStand = true
+
+                        -- Dùng TweenService để teleport nhân vật tới vị trí mới
+                        local targetPosition = CFrame.new(-40.604331970214844, -1005.7239990234375, 926.5462646484375)
+                        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+
+                        local tween = TweenService:Create(HRP, tweenInfo, {CFrame = targetPosition})
+                        tween:Play()
+
+                        tween.Completed:Wait() -- Đợi cho đến khi tween hoàn tất
+                    end
+                elseif healthPercent >= 90 and distance > 10 and not isTweeningToBoss then
+                    -- Nếu máu >= 90% và khoảng cách > 10, tiếp tục tween đến boss
+                    local goalCFrame = targetPart.CFrame + Vector3.new(0, -15, 2)
+                    local tween = TweenService:Create(HRP, tweenInfo, {CFrame = goalCFrame})
+                    tween:Play()
+                    tween.Completed:Wait()
+                    isTweeningToBoss = true
+                else
+                    -- Không di chuyển
+                end
+
+                -- Freeze sau tween
+                if floatAttachment then floatAttachment:Destroy() end
+
+                floatAttachment = Instance.new("BodyGyro")
+                floatAttachment.MaxTorque = Vector3.new(400000, 400000, 400000)
+                floatAttachment.CFrame = HRP.CFrame
+                floatAttachment.Parent = HRP
+
+                local bodyVelocity = Instance.new("BodyVelocity")
+                bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
+                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                bodyVelocity.Parent = HRP
+
+                task.wait(0.3)
             end
-        end
-        print("✅ Noclip đã bật khi tween tới boss.")
 
-        -- Kiểm tra điều kiện liên tục
-        local healthPercent = Humanoid.Health / Humanoid.MaxHealth * 100
-        local distance = (HRP.Position - targetPart.Position).Magnitude
-        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
-        local goalCFrame
+            -- Tắt AntiFall khi dừng
+            DisableAntiFall()
 
-        -- Vòng lặp kiểm tra liên tục
-        RunService.Heartbeat:Connect(function()
-            healthPercent = Humanoid.Health / Humanoid.MaxHealth * 100
-            distance = (HRP.Position - targetPart.Position).Magnitude
-            print("📊 Health:", healthPercent, "Distance:", distance)
-
-            if healthPercent >= 90 and distance > 10 then
-                goalCFrame = targetPart.CFrame + Vector3.new(0, -15, 2)
-                print("✈️ Bay đến boss (máu khỏe và đủ xa).")
-            elseif healthPercent <= 75 then
-                goalCFrame = CFrame.new(HRP.Position.X, -1000, HRP.Position.Z)
-                print("🔻 Bay xuống sâu vì máu <= 75%.")
-            else
-                print("⚠️ Không đủ điều kiện để tween.")
-                return
-            end
-
-            -- Tween trước, rồi mới khóa tại chỗ
-            local tween = TweenService:Create(HRP, tweenInfo, {CFrame = goalCFrame})
-            tween:Play()
-            tween.Completed:Wait()
-
-            print("✅ Tween hoàn tất.")
-
-            -- Đóng băng sau khi tween
-            if floatAttachment then
-                floatAttachment:Destroy()
-            end
-
-            -- Tạo trạng thái bay bằng BodyGyro & BodyVelocity
-            floatAttachment = Instance.new("BodyGyro")
-            floatAttachment.MaxTorque = Vector3.new(400000, 400000, 400000)  -- Cân bằng với các lực xoay
-            floatAttachment.CFrame = HRP.CFrame
-            floatAttachment.Parent = HRP
-
-            local bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)  -- Giữ nguyên vị trí trên không
-            bodyVelocity.Parent = HRP
-
-            print("📍 Nhân vật đã được giữ cố định trong trạng thái bay.")
         end)
     end
 })
