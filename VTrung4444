@@ -504,6 +504,29 @@ local function startTweenToTataraLoop()
             end
         end)
 
+        -- Kiểm tra và ngừng combat nếu Replay tồn tại
+        local function checkAndStopCombat()
+            local replayButton = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Vote") 
+                and game:GetService("Players").LocalPlayer.PlayerGui.Vote:FindFirstChild("Frame") 
+                and game:GetService("Players").LocalPlayer.PlayerGui.Vote.Frame:FindFirstChild("CosmeticInterface")
+                and game:GetService("Players").LocalPlayer.PlayerGui.Vote.Frame.CosmeticInterface:FindFirstChild("Replay")
+
+            if replayButton then
+                -- Ngừng doCombat() nếu Replay tồn tại
+                doCombat = function() end  -- Hủy bỏ hành động combat
+
+                -- Lặp lại nhấn vào Replay mỗi 0.5 giây
+                task.spawn(function()
+                    while replayButton and replayButton.Parent do
+                        VirtualInputManager:SendMouseButtonEvent(replayButton.AbsolutePosition.X, replayButton.AbsolutePosition.Y, 0, true, game)
+                        task.wait(0.1)
+                        VirtualInputManager:SendMouseButtonEvent(replayButton.AbsolutePosition.X, replayButton.AbsolutePosition.Y, 0, false, game)
+                        task.wait(0.4)
+                    end
+                end)
+            end
+        end
+
         while tweenToTatara do
             -- Cập nhật khi respawn
             if LocalPlayer.Character ~= character then
@@ -528,7 +551,7 @@ local function startTweenToTataraLoop()
             local percent = humanoid.Health / humanoid.MaxHealth * 100
             if percent < 90 then
                 -- Khi HP dưới 90%, thực hiện lơ lửng
-                local hoverPos = Vector3.new(-37, 250, 847)
+                local hoverPos = Vector3.new(HRP.Position.X, 250, HRP.Position.Z)
                 local hoverTween = TweenService:Create(HRP, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = CFrame.new(hoverPos)})
                 hoverTween:Play()
                 hoverTween.Completed:Wait()
@@ -547,7 +570,7 @@ local function startTweenToTataraLoop()
                 velocity.Parent = HRP
 
                 -- Giữ trạng thái lơ lửng trong 3 giây
-                task.wait(4)  -- Điều chỉnh thời gian nếu cần
+                task.wait(3)  -- Điều chỉnh thời gian nếu cần
 
                 -- Dọn dẹp trạng thái lơ lửng
                 gyro:Destroy()
@@ -564,6 +587,9 @@ local function startTweenToTataraLoop()
 
                 break
             end
+
+            -- Kiểm tra nếu Replay xuất hiện và ngừng doCombat
+            checkAndStopCombat()
 
             -- Tìm boss và Tween nếu cần
             local bossModel
@@ -633,3 +659,4 @@ MainSection:AddToggle({
         end
     end
 })
+
