@@ -495,6 +495,15 @@ local function startTweenToTataraLoop()
             if part:IsA("BasePart") then part.CanCollide = false end
         end
 
+        -- Bật noclip: tắt va chạm liên tục
+        local noclipConn = RunService.Stepped:Connect(function()
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end)
+
         while tweenToTatara do
             -- Cập nhật khi respawn
             if LocalPlayer.Character ~= character then
@@ -518,6 +527,41 @@ local function startTweenToTataraLoop()
             -- Kiểm tra HP để quyết định tween hoặc dừng loop
             local percent = humanoid.Health / humanoid.MaxHealth * 100
             if percent < 90 then
+                -- Khi HP dưới 90%, thực hiện lơ lửng
+                local hoverPos = Vector3.new(HRP.Position.X, 250, HRP.Position.Z)
+                local hoverTween = TweenService:Create(HRP, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = CFrame.new(hoverPos)})
+                hoverTween:Play()
+                hoverTween.Completed:Wait()
+
+                -- Tạo attachments giữ lơ lửng
+                local gyro = Instance.new("BodyGyro")
+                gyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+                gyro.P = 1e5
+                gyro.CFrame = HRP.CFrame
+                gyro.Parent = HRP
+
+                local velocity = Instance.new("BodyVelocity")
+                velocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                velocity.Velocity = Vector3.new(0, 0, 0)  -- Tạo trạng thái đứng yên
+                velocity.P = 1e5
+                velocity.Parent = HRP
+
+                -- Giữ trạng thái lơ lửng trong 3 giây
+                task.wait(3)  -- Điều chỉnh thời gian nếu cần
+
+                -- Dọn dẹp trạng thái lơ lửng
+                gyro:Destroy()
+                velocity:Destroy()
+
+                -- Tiến hành Tween xuống dưới địa ngục
+                local fallPos = CFrame.new(-40.604, -1000.723, 926.546)
+                local fallTween = TweenService:Create(HRP, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = fallPos})
+                fallTween:Play()
+                fallTween.Completed:Wait()
+
+                -- Ngắt noclip sau khi hoàn tất
+                noclipConn:Disconnect()
+
                 break
             end
 
@@ -589,4 +633,3 @@ MainSection:AddToggle({
         end
     end
 })
-
