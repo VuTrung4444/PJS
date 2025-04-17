@@ -551,7 +551,7 @@ local function startTweenToTataraLoop()
             local percent = humanoid.Health / humanoid.MaxHealth * 100
             if percent < 90 then
                 -- Khi HP dưới 90%, thực hiện lơ lửng
-                local hoverPos = Vector3.new(HRP.Position.X, 250, HRP.Position.Z)
+                local hoverPos = Vector3.new(HRP.Position.X+200, 250, HRP.Position.Z+200)
                 local hoverTween = TweenService:Create(HRP, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = CFrame.new(hoverPos)})
                 hoverTween:Play()
                 hoverTween.Completed:Wait()
@@ -659,4 +659,3 @@ MainSection:AddToggle({
         end
     end
 })
-
