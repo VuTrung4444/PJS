@@ -440,233 +440,153 @@ MainSection:AddToggle({
     end
 })
 
-
-local autoAttack = false
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+-- Khai báo services
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
 local LocalPlayer = Players.LocalPlayer
 
--- Hàm thực hiện thao tác đánh và nhấn phím R (fix chiếm chuột)
-local function performAction()
+-- Biến điều khiển
+local tweenToTatara = false
+local loopRunning = false
+local isAttacking = false
+local floatAttachment, velocityAttachment, currentTween
+
+-- Hàm AutoAttack với guard chống chồng coroutine
+local function doCombat()
+    if isAttacking or not tweenToTatara then return end
+    isAttacking = true
+
+    local mousePos = UserInputService:GetMouseLocation()
     for i = 1, 4 do
-        -- Mô phỏng chuột trái
-        UserInputService.InputBegan:Fire({
-            UserInputType = Enum.UserInputType.MouseButton1,
-            UserInputState = Enum.UserInputState.Begin
-        })
+        if not tweenToTatara then break end
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         task.wait(0.05)
-        UserInputService.InputEnded:Fire({
-            UserInputType = Enum.UserInputType.MouseButton1,
-            UserInputState = Enum.UserInputState.End
-        })
-        task.wait(0.3)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+        task.wait(0.25)
     end
 
-    task.wait(0.5)
+    if tweenToTatara then
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+    end
 
-    -- Nhấn phím R
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
-    task.wait(0.1)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
-
-    task.wait(1.5)
+    isAttacking = false
 end
 
--- AutoAttack theo phần trăm máu
-RunService.Heartbeat:Connect(function()
-    local character = LocalPlayer.Character
-    if character and character:FindFirstChild("Humanoid") then
-        local humanoid = character.Humanoid
-        local hp = humanoid.Health
-        local maxHp = humanoid.MaxHealth
-        local percent = (hp / maxHp) * 100
+-- Hàm tween đến boss và giữ trạng thái
+local function startTweenToTataraLoop()
+    if loopRunning then return end
+    loopRunning = true
 
-        if percent >= 90 and tweenToTatara then
-            task.spawn(performAction)
+    task.spawn(function()
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        local HRP = character:WaitForChild("HumanoidRootPart")
+        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+
+        -- Khởi tạo noclip + freeze
+        humanoid.PlatformStand = true
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
         end
+
+        while tweenToTatara do
+            -- Cập nhật khi respawn
+            if LocalPlayer.Character ~= character then
+                character = LocalPlayer.Character
+                humanoid = character:WaitForChild("Humanoid")
+                HRP = character:WaitForChild("HumanoidRootPart")
+                humanoid.PlatformStand = true
+                for _, part in pairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+
+            -- Mở Blade nếu ẩn
+            local entity = workspace.Entities:FindFirstChild(LocalPlayer.Name)
+            if entity and entity:FindFirstChild("Weapon") and entity.Weapon:FindFirstChild("Blade") and entity.Weapon.Blade.Transparency == 1 then
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                task.wait(0.2)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+            end
+
+            -- Kiểm tra HP để quyết định tween hoặc dừng loop
+            local percent = humanoid.Health / humanoid.MaxHealth * 100
+            if percent < 90 then
+                break
+            end
+
+            -- Tìm boss và Tween nếu cần
+            local bossModel
+            for _, e in ipairs(workspace.Entities:GetChildren()) do
+                if e.Name:match("^Tatara_") then bossModel = e break end
+            end
+            local bossRig = bossModel and bossModel:FindFirstChild("TataraBossRig")
+            local targetPart = bossRig and (bossRig.PrimaryPart or bossRig:FindFirstChild("HumanoidRootPart"))
+
+            if percent >= 100 and targetPart then
+                local dist = (HRP.Position - targetPart.Position).Magnitude
+                if dist > 10 then
+                    if currentTween then currentTween:Cancel() end
+                    currentTween = TweenService:Create(HRP, tweenInfo, {CFrame = targetPart.CFrame + Vector3.new(0, -15, 2)})
+                    currentTween:Play()
+                    currentTween.Completed:Wait()
+                end
+            end
+
+            -- Giữ đứng yên
+            if floatAttachment then floatAttachment:Destroy() end
+            if velocityAttachment then velocityAttachment:Destroy() end
+            floatAttachment = Instance.new("BodyGyro", HRP)
+            floatAttachment.MaxTorque = Vector3.new(1e6,1e6,1e6)
+            velocityAttachment = Instance.new("BodyVelocity", HRP)
+            velocityAttachment.MaxForce = Vector3.new(1e6,1e6,1e6)
+            velocityAttachment.Velocity = Vector3.new()
+
+            task.wait(0.3)
+        end
+
+        -- Dọn dẹp trạng thái khi loop kết thúc
+        loopRunning = false
+        if currentTween then currentTween:Cancel() currentTween = nil end
+        if floatAttachment then floatAttachment:Destroy() floatAttachment = nil end
+        if velocityAttachment then velocityAttachment:Destroy() velocityAttachment = nil end
+        humanoid.PlatformStand = false
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
+        end
+    end)
+end
+
+-- Theo dõi HP để start loop và autoattack
+RunService.Heartbeat:Connect(function()
+    local char = LocalPlayer.Character
+    local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+    local percent = humanoid and humanoid.Health / humanoid.MaxHealth * 100 or 0
+
+    if tweenToTatara and not loopRunning and percent >= 100 then
+        startTweenToTataraLoop()
+    end
+
+    if tweenToTatara and percent >= 90 then
+        doCombat()
     end
 end)
 
+-- Toggle UI để bật/tắt logic
 MainSection:AddToggle({
     Name = "Tween To Tatara Boss",
     Default = false,
-    Callback = function(value)
-        tweenToTatara = value
-
-        local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-        local Humanoid = Character:WaitForChild("Humanoid")
-        local HRP = Character:WaitForChild("HumanoidRootPart")
-
-        if not tweenToTatara then
-            if floatAttachment then floatAttachment:Destroy() end
-            noclip = false
-            Humanoid.PlatformStand = false
-
-            for _, part in pairs(Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-
-            DisableAntiFall()
-            return
+    Callback = function(val)
+        tweenToTatara = val
+        if tweenToTatara then
+            startTweenToTataraLoop()
         end
-
-        Humanoid.PlatformStand = true
-        noclip = true
-        for _, part in pairs(Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-
-        local entityName = LocalPlayer.Name
-        local playerEntity = workspace.Entities:FindFirstChild(entityName)
-        if playerEntity and playerEntity:FindFirstChild("Weapon") and playerEntity.Weapon:FindFirstChild("Blade") then
-            if playerEntity.Weapon.Blade.Transparency == 1 then
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                task.wait(0.5)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-            end
-        end
-
-        local bossModel
-        for _, entity in ipairs(workspace.Entities:GetChildren()) do
-            if string.match(entity.Name, "^Tatara_") then
-                bossModel = entity
-                break
-            end
-        end
-        if not bossModel then return end
-
-        local bossRig = bossModel:FindFirstChild("TataraBossRig")
-        if not bossRig then return end
-
-        local targetPart = bossRig.PrimaryPart or bossRig:FindFirstChild("HumanoidRootPart") or bossRig:FindFirstChildWhichIsA("BasePart")
-        if not targetPart then return end
-
-        task.spawn(function()
-            local currentCharacter = Character
-            local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
-
-            while tweenToTatara do
-                if LocalPlayer.Character ~= currentCharacter then
-                    currentCharacter = LocalPlayer.Character
-                    Character = currentCharacter
-                    Humanoid = Character:WaitForChild("Humanoid")
-                    HRP = Character:WaitForChild("HumanoidRootPart")
-
-                    Humanoid.PlatformStand = true
-                    for _, part in pairs(Character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-
-                if noclip then
-                    for _, part in pairs(Character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-
-                if playerEntity and playerEntity:FindFirstChild("Weapon") and playerEntity.Weapon:FindFirstChild("Blade") then
-                    if playerEntity.Weapon.Blade.Transparency == 1 then
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                        task.wait(0.5)
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                    end
-                end
-
-                local hp = Humanoid.Health
-                local maxHp = Humanoid.MaxHealth
-                local percent = (hp / maxHp) * 100
-
-                if percent < 90 then
-                    tweenToTatara = false
-
-                    local targetEntity = workspace.Entities:FindFirstChild("accchonguoideptrai1")
-                    if targetEntity then
-                        local HRP2 = targetEntity:WaitForChild("HumanoidRootPart")
-                        local Humanoid2 = targetEntity:WaitForChild("Humanoid")
-
-                        for _, part in pairs(targetEntity:GetDescendants()) do
-                            if part:IsA("BasePart") then
-                                part.CanCollide = false
-                            end
-                        end
-
-                        Humanoid2.PlatformStand = true
-
-                        -- Hover lên
-                        local hoverPos = Vector3.new(HRP2.Position.X, 200, HRP2.Position.Z)
-                        local hoverTween = TweenService:Create(HRP2, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = CFrame.new(hoverPos)})
-                        hoverTween:Play()
-                        hoverTween.Completed:Wait()
-
-                        task.wait(2) -- nghỉ để thay thế cho while loop lặp lại
-
-                        if tweenToTatara then
-                            -- Sau đó di chuyển xuống boss
-                            local targetPosition = CFrame.new(-40.604, -800.723, 926.546)
-                            local tween2 = TweenService:Create(HRP2, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = targetPosition})
-                            tween2:Play()
-                            tween2.Completed:Wait()
-
-                            for _, part in pairs(targetEntity:GetDescendants()) do
-                                if part:IsA("BasePart") then
-                                    part.CanCollide = false
-                                    for _, mover in ipairs(part:GetChildren()) do
-                                        if mover:IsA("BodyMover") or mover:IsA("BodyGyro") or mover:IsA("BodyVelocity") or mover:IsA("LinearVelocity") or mover:IsA("AlignPosition") then
-                                            mover:Destroy()
-                                        end
-                                    end
-                                end
-                            end
-
-                            Humanoid2.PlatformStand = true
-                            Humanoid2.Sit = false
-                            Humanoid2:ChangeState(Enum.HumanoidStateType.Physics)
-                            task.wait(0.1)
-                            Humanoid2:ChangeState(Enum.HumanoidStateType.GettingUp)
-                            task.wait(0.1)
-                            Humanoid2.PlatformStand = true
-                        end
-                    end
-
-                    break
-                end
-
-                local distance = (HRP.Position - targetPart.Position).Magnitude
-
-                if percent >= 100 and distance > 10 then
-                    local goalCFrame = targetPart.CFrame + Vector3.new(0, -15, 2)
-                    local tween = TweenService:Create(HRP, tweenInfo, {CFrame = goalCFrame})
-                    tween:Play()
-                    tween.Completed:Wait()
-                end
-
-                if floatAttachment then floatAttachment:Destroy() end
-
-                floatAttachment = Instance.new("BodyGyro")
-                floatAttachment.MaxTorque = Vector3.new(400000, 400000, 400000)
-                floatAttachment.CFrame = HRP.CFrame
-                floatAttachment.Parent = HRP
-
-                local bodyVelocity = Instance.new("BodyVelocity")
-                bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
-                bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                bodyVelocity.Parent = HRP
-
-                task.wait(0.3)
-            end
-
-            DisableAntiFall()
-        end)
     end
 })
+
