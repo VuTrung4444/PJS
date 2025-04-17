@@ -439,7 +439,6 @@ MainSection:AddToggle({
         end
     end
 })
-
 -- Khai báo services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -478,6 +477,24 @@ local function doCombat()
     isAttacking = false
 end
 
+-- Hàm tính toán thời gian tween đến Boss Arenas với tốc độ cố định
+local function getTweenInfoToBoss(targetPosition)
+    local character = LocalPlayer.Character
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    
+    -- Tính khoảng cách giữa nhân vật và Boss Arenas
+    local distance = (humanoidRootPart.Position - targetPosition).Magnitude
+    
+    -- Đặt tốc độ cố định cho tween (đơn vị: studs/s)
+    local fixedSpeed = 200  -- Tốc độ cố định (ví dụ: 100 studs mỗi giây)
+    
+    -- Tính thời gian tween dựa trên khoảng cách và tốc độ
+    local timeToReach = distance / fixedSpeed
+    
+    -- Tạo TweenInfo với thời gian tính được
+    return TweenInfo.new(timeToReach, Enum.EasingStyle.Linear)
+end
+
 -- Hàm tween đến boss và giữ trạng thái
 local function startTweenToTataraLoop()
     if loopRunning then return end
@@ -487,7 +504,6 @@ local function startTweenToTataraLoop()
         local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
         local humanoid = character:WaitForChild("Humanoid")
         local HRP = character:WaitForChild("HumanoidRootPart")
-        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
 
         -- Khởi tạo noclip + freeze
         humanoid.PlatformStand = true
@@ -504,27 +520,28 @@ local function startTweenToTataraLoop()
             end
         end)
 
-        -- Kiểm tra và ngừng combat nếu Replay tồn tại
-        local function checkAndStopCombat()
-            local replayButton = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("Vote") 
-                and game:GetService("Players").LocalPlayer.PlayerGui.Vote:FindFirstChild("Frame") 
-                and game:GetService("Players").LocalPlayer.PlayerGui.Vote.Frame:FindFirstChild("CosmeticInterface")
-                and game:GetService("Players").LocalPlayer.PlayerGui.Vote.Frame.CosmeticInterface:FindFirstChild("Replay")
+        -- Kiểm tra Place ID và nếu đúng, thực hiện tween đến tọa độ cụ thể (Boss Arenas)
+        if game.PlaceId == 91797414023830 then
+            -- Tọa độ của Boss Arenas
+            local targetPosition = Vector3.new(7714.44287109375, -6.475745677947998, -984.05029296875)
 
-            if replayButton then
-                -- Ngừng doCombat() nếu Replay tồn tại
-                doCombat = function() end  -- Hủy bỏ hành động combat
+            -- Tính toán thời gian tween và tạo tween đến Boss Arenas
+            local bossTweenInfo = getTweenInfoToBoss(targetPosition)
+            local tween = TweenService:Create(HRP, bossTweenInfo, {CFrame = CFrame.new(targetPosition)})
+            tween:Play()
+            tween.Completed:Wait()
 
-                -- Lặp lại nhấn vào Replay mỗi 0.5 giây
-                task.spawn(function()
-                    while replayButton and replayButton.Parent do
-                        VirtualInputManager:SendMouseButtonEvent(replayButton.AbsolutePosition.X, replayButton.AbsolutePosition.Y, 0, true, game)
-                        task.wait(0.1)
-                        VirtualInputManager:SendMouseButtonEvent(replayButton.AbsolutePosition.X, replayButton.AbsolutePosition.Y, 0, false, game)
-                        task.wait(0.4)
-                    end
-                end)
-            end
+            print("[TWEEN] Đã di chuyển tới Boss Arenas.")
+
+            -- Sau khi di chuyển đến Boss Arenas, nhấn phím E để chọn Boss Tatara
+            task.wait(0.5) -- Đảm bảo thời gian hoàn tất tween trước khi nhấn E
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)  -- Nhấn E
+            task.wait(0.2)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game) -- Thả phím E
+
+            print("[INPUT] Đã nhấn phím E để chọn Boss Tatara.")
+        else
+            warn("[PLACE ID] Đoạn mã này chỉ áp dụng cho Place ID 91797414023830.")
         end
 
         while tweenToTatara do
@@ -603,7 +620,7 @@ local function startTweenToTataraLoop()
                 local dist = (HRP.Position - targetPart.Position).Magnitude
                 if dist > 10 then
                     if currentTween then currentTween:Cancel() end
-                    currentTween = TweenService:Create(HRP, tweenInfo, {CFrame = targetPart.CFrame + Vector3.new(0, -15, 2)})
+                    currentTween = TweenService:Create(HRP, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {CFrame = targetPart.CFrame + Vector3.new(0, -15, 2)})
                     currentTween:Play()
                     currentTween.Completed:Wait()
                 end
@@ -643,7 +660,7 @@ RunService.Heartbeat:Connect(function()
         startTweenToTataraLoop()
     end
 
-    if tweenToTatara and percent >= 90 then
+    if tweenToTatara and percent >= 90 and not getTweenInfoToBoss then
         doCombat()
     end
 end)
@@ -660,23 +677,3 @@ MainSection:AddToggle({
     end
 })
 
-
-local VirtualUser = game:GetService("VirtualUser")
-local Players = game:GetService("Players")
-
--- Hàm tạo thời gian random kiểu tự nhiên, có lúc nhanh lúc chậm
-local function naturalWaitTime()
-    local baseTime = 600 -- 10 phút
-    local offset = math.random(-120, 180) -- lệch ngẫu nhiên từ -2 phút đến +3 phút
-    return math.max(300, baseTime + offset) -- đảm bảo tối thiểu 5 phút
-end
-
-spawn(function()
-    while true do
-        wait(naturalWaitTime()) 
-        if Players.LocalPlayer and Players.LocalPlayer.Character then
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new(math.random(100, 1820), math.random(100, 980))) 
-        end
-    end
-end)
