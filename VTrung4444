@@ -1594,6 +1594,75 @@ Gourd:AddToggle({
 		end
 	})
 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local player = Players.LocalPlayer
+local playerName = player.Name
+
+local running = false 
+
+MiscSection:AddToggle({
+    Name = "Auto Muzan's Blood",
+    Default = false,
+    Callback = function(value)
+        running = value
+        if running then
+            task.spawn(function()
+                while running do
+                    local muzan = Workspace:FindFirstChild("Muzan")
+                    local muzanSpawnPos = muzan and muzan:FindFirstChild("SpawnPos")
+
+                    if muzan and muzanSpawnPos then
+                        local args1 = {
+                            [1] = "AddQuest",
+                            [2] = "Players." .. playerName .. ".PlayerGui.Npc_Dialogue.LocalScript.Functions",
+                            [3] = 313.62536329600016,
+                            [4] = ReplicatedStorage:WaitForChild("Player_Data"):WaitForChild(playerName):WaitForChild("Quest"),
+                            [5] = {
+                                ["Current"] = "Join Muzan's demon ranks",
+                                ["List"] = {
+                                    [1] = {
+                                        ["Name"] = "Collect Blue Spider Lily flowers",
+                                        ["Progress"] = {0, 5}
+                                    },
+                                    [2] = {
+                                        ["Name"] = "Bring Doctor Higoshima to Muzan",
+                                        ["Progress"] = {0, 1}
+                                    }
+                                }
+                            }
+                        }
+
+                        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("To_Server"):WaitForChild("Handle_Initiate_S"):FireServer(unpack(args1))
+
+                        task.wait(5)
+
+                        local args2 = {
+                            [1] = "Quest_add",
+                            [2] = "Players." .. playerName .. ".PlayerGui.Npc_Dialogue.LocalScript.Functions",
+                            [3] = 340.91232565300015,
+                            [4] = {},
+                            [5] = player,
+                            [6] = "doctorhigoshimabringbacktomuzan"
+                        }
+
+                        ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("To_Server"):WaitForChild("Handle_Initiate_S"):FireServer(unpack(args2))
+
+                        task.wait(2)
+
+                        for i = 1, 5 do
+                            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("lilyredeem"):FireServer()
+                            task.wait(1)
+                        end
+                    end
+                    task.wait(33)  
+                end
+            end)
+        end
+    end
+})
+
 
 	local autoMuzanEnabled = false
 	local autoMuzanLoop = nil
@@ -1601,7 +1670,7 @@ Gourd:AddToggle({
 	local questConnectionRemove = nil
 
 	MiscSection:AddToggle({
-		Name = "Auto Nhận Nhiệm Vụ Muzan",
+		Name = "Auto Muzan's Quest",
 		Default = false,
 		Callback = function(state)
 			autoMuzanEnabled = state
