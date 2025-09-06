@@ -889,6 +889,11 @@
 
             local targetNames = {
                 "Frost Touched Cloth",
+				"Tanjiro Haorie",
+				"Snow Katana",
+				"Ominous Blindfold",
+				"Gem Stone Eyepatch",
+				"Banigaru Mask",
                 "Lightning Katana",
                 "Insect Katana",
                 "Giyu's Water Katana",
