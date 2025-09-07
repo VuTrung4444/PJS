@@ -1441,7 +1441,7 @@ Gourd:AddToggle({
 						
 						-- Tắt God Mode khi Koketsu Arrow được sử dụng
 						if godModeState then
-							task.wait(0.3)
+							task.wait(0.4)
 							toggleGodMode(false)
 						end
 					end
