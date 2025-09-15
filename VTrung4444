@@ -2656,7 +2656,7 @@ Ect:AddToggle({
 	local antifallActive = false 
 	spawn(function()
 		game:GetService("RunService").Stepped:Connect(function()
-			if getgenv().Farm or getgenv().MoveAround or getgenv().AutoCollect or startAutoMoveLoop() then
+			if getgenv().Farm or getgenv().MoveAround or getgenv().AutoCollect then
 				for _, v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
 					if v:IsA("BasePart") then
 						v.CanCollide = false    
