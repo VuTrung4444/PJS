@@ -371,7 +371,6 @@
 	local chr = Player.Character
 	local root = chr and chr:FindFirstChild("HumanoidRootPart")
 
-	local AutoCollectLilys = false
 	local NextFrame = RunService.Heartbeat;
 
 
@@ -2169,7 +2168,7 @@ local function getValidMobPositions()
 	return validPositions
 end
 
--- Lấy vị trí spawn mob xa nhất
+
 local function getFurthestSpawnLocations(count)
 	local positions = getValidMobPositions()
 
@@ -2186,7 +2185,7 @@ local function getFurthestSpawnLocations(count)
 	return result
 end
 
--- Luồng tự động di chuyển tới mobs
+
 local function startAutoMoveLoop()
 	if AutoMoveThread then return end
 
@@ -2657,7 +2656,7 @@ Ect:AddToggle({
 	local antifallActive = false 
 	spawn(function()
 		game:GetService("RunService").Stepped:Connect(function()
-			if getgenv().Farm or getgenv().MoveAround or AutoCollectLilys then
+			if getgenv().Farm or getgenv().MoveAround or getgenv().AutoCollect or startAutoMoveLoop() then
 				for _, v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants()) do
 					if v:IsA("BasePart") then
 						v.CanCollide = false    
