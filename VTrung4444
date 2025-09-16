@@ -2443,7 +2443,7 @@ Ect:AddToggle({
 						if (not debounce) and ((not game.Players.LocalPlayer:FindFirstChild("combotangasd123")) or game.Players.LocalPlayer:FindFirstChild("combotangasd123") and game.Players.LocalPlayer:FindFirstChild("combotangasd123").Value < 1) then 
 						debounce = true 
 						attack(attackMethods[Method])
-						task.wait(0.7)
+						task.wait(1)
 						debounce = false
 					end
 				end
