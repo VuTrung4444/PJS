@@ -3342,6 +3342,59 @@ Ect:AddToggle({
 		end
 	})
 
+AuraTab:AddToggle({
+		Name = "Mist Aura",
+		Flag = "Mist",
+		Callback = function(v)
+			getgenv().Mist = v
+			if v then
+				-- Luồng tấn công sát thương
+				task.spawn(function()
+					while getgenv().Mist do 
+						local target = getclosestSkills(game:GetService("Workspace").Mobs)
+						
+						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+							local targetCFrame = nil
+							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
+								targetCFrame = target:GetModelCFrame()
+							end
+
+							if targetCFrame then
+								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+
+								-- Chỉ gây sát thương khi gần hơn 40
+								if distance < 40 then
+									local args = {
+										[1] = "mist_cloud_haze_damage",
+										[2] = game.Players.LocalPlayer.Character,
+										[3] = targetCFrame
+									}          
+									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
+								end
+							end
+						end
+						task.wait(6)
+					end
+				end)
+
+				-- Luồng kích hoạt skill
+				task.spawn(function()
+					while getgenv().Mist do
+						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+									local args = {
+										[1] = "skil_ting_asd",
+										[2] = game.Players.LocalPlayer,
+										[3] = "mist_breathing_cloud_and_haze",
+										[4] = 5
+									}
+									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+									task.wait(15)
+						end
+					end
+				end)
+			end
+		end
+	})
 
 	--MoveAround--
 
