@@ -284,86 +284,6 @@
 		Humanoid.JumpPower = JumpPower
 	end)
 
-	local AtBoss = false
-	local SkillCooldowns = {}
-	local SelectedSkills = {"Z", "X", "C", "V"} -- Danh sách kỹ năng hợp lệ
-	local skill = SelectedSkills[1] -- Lấy kỹ năng đầu tiên
-
-	function GetCooldownTime(skill)
-		-- Giả lập dữ liệu hồi chiêu
-		local cooldowns = {Z = 5, X = 5, C = 5, V = 5, B = 5, N = 5}
-		return cooldowns[skill] or nil
-	end
-
-
-	local function UseSkill(skill)
-		if IsSkillReady(skill) then
-			VirtualInputManager:SendKeyEvent(true, skill, false, game)
-			SkillCooldowns[skill] = tick() -- Lưu thời gian sử dụng skill
-		end
-	end
-
-
-	local function IsSkillReady(skill)
-		local lastUsed = SkillCooldowns[skill] or 0
-		local cooldownTime = GetCooldownTime(skill) -- Hàm giả định lấy thời gian hồi chiêu của skill
-		return (tick() - lastUsed) >= cooldownTime
-	end
-
-	local VirtualInputManager = game:GetService("VirtualInputManager")
-	local AutoSkillEnabled = false -- Biến điều khiển Auto Skill
-	local SkillStates = {
-		Z = false,
-		X = false,
-		C = false,
-		V = false,
-		B = false,
-		N = false
-	}
-
-
-	if not VirtualInputManager or not VirtualInputManager.SendKeyEvent then
-		error("❌ VirtualInputManager không hỗ trợ SendKeyEvent! Không thể tiếp tục.")
-	end
-
-	-- Hàm dùng kỹ năng
-	local function UseSkill(skillKey)
-		local keycode = Enum.KeyCode[skillKey]
-		-- Nhấn phím
-		VirtualInputManager:SendKeyEvent(true, keycode, false, game)
-		task.wait(0.2) -- Chờ một chút
-		-- Nhả phím
-		VirtualInputManager:SendKeyEvent(false, keycode, false, game)
-	end
-
-
-	-- Hàm chạy Auto Skill
-	local function AutoSkillLoop()
-		while AutoSkillEnabled do
-			if AtBoss then -- Chỉ dùng kỹ năng khi đã đến gần boss
-				local skillUsed = false
-
-				for _, skill in ipairs({"Z", "X", "C", "V", "B", "N"}) do
-					if AutoSkillEnabled and SkillStates[skill] then
-						if IsSkillReady(skill) then 
-							UseSkill(skill)
-							skillUsed = true
-						end
-					end
-				end
-				
-				if skillUsed then
-					task.wait(0.5)
-				else
-					task.wait(0.1) 
-				end
-			else
-				task.wait(0.1) -- Đợi tiếp nếu chưa tới boss
-			end
-		end
-	end
-
-
 
 	local RunService = game:GetService("RunService");
 	local Players = game:GetService("Players");
@@ -726,7 +646,7 @@
 	local MiscTab = Window:CreateTab({Name = "Misc"})
 	local MiscSection = MiscTab:CreateSection({Name = "Misc"})
 	local GodModeQuick = MiscTab:CreateSection({Name = "GMQ", Side = "Right"})
-	local AutoSkills = MiscTab:CreateSection({Name = "AutoSkills", Side = "Left"})
+	local Breathings = MiscTab:CreateSection({Name = "Breathings", Side = "Left"})
 	local SpeedAndJump = MiscTab:CreateSection({Name = "Speed&Jump", Side = "Right"})
 	local Ect = MiscTab:CreateSection({Name = "Ect", Side = "Left"})
 
@@ -1797,31 +1717,6 @@ MiscSection:AddToggle({
 	})
 
 
-	AutoSkills:AddToggle({
-		Name = "Auto Skill",
-		Flag = "AutoSkillEnabled",
-		Callback = function(state)
-			AutoSkillEnabled = state
-			local skill = SelectedSkill or "Z"
-
-			if state then
-				task.spawn(AutoSkillLoop)
-			end
-		end
-	})
-
-	for _, skill in ipairs({"Z", "X", "C", "V", "B", "N"}) do
-		AutoSkills:AddToggle({
-			Name = "Use Skill " .. skill,
-			Flag = "UseSkill" .. skill,
-			Callback = function(state)
-				SkillStates[skill] = state
-			end
-		})
-	end
-
-
-
 	local Formatted = ("%svs"):format(Player.Name)
 	local autoClashRunning = false
 	local autoClashThread = nil
@@ -2278,7 +2173,7 @@ Ect:AddToggle({
 		elseif SelectedMap == "Map2" then
 			LocationsToUse = Map2List
 			BossesToUse = BossesMap2List
-			SelectedArea = "Akeza Cave"
+			SelectedArea = "Cave 1"
 		else
 			SelectedArea = nil
 		end
@@ -2771,7 +2666,6 @@ Ect:AddToggle({
 
 				local bossCFrame = CFrame.new(boss.Position)
 				local TweenFa = Tween(bossCFrame)
-				AtBoss = false
 
 				-- Di chuyển đến boss
 				repeat
@@ -2812,7 +2706,6 @@ Ect:AddToggle({
 									TweenFa = Tween(entityCFrame)
 								end
 							end
-							AtBoss = GetDistance(entityCFrame) < 25
 						end
 					end
 				end
@@ -3235,7 +3128,7 @@ Ect:AddToggle({
 	})
 
 
-	AuraTab:AddToggle({
+	Breathings:AddToggle({
 		Name = "Thunder Aura",
 		Flag = "Thunder",
 		Callback = function(v)
@@ -3289,7 +3182,7 @@ Ect:AddToggle({
 		end
 	})
 
-		AuraTab:AddToggle({
+		Breathings:AddToggle({
 		Name = "Sound Aura",
 		Flag = "Sound",
 		Callback = function(v)
@@ -3343,7 +3236,7 @@ Ect:AddToggle({
 		end
 	})
 
-AuraTab:AddToggle({
+Breathings:AddToggle({
 		Name = "Mist Aura",
 		Flag = "Mist",
 		Callback = function(v)
@@ -3397,7 +3290,7 @@ AuraTab:AddToggle({
 		end
 	})
 
-	AuraTab:AddToggle({
+	Breathings:AddToggle({
 		Name = "Flame Aura",
 		Flag = "Flame",
 		Callback = function(v)
@@ -3451,7 +3344,7 @@ AuraTab:AddToggle({
 		end
 	})
 
-	AuraTab:AddToggle({
+	Breathings:AddToggle({
 		Name = "Beast Aura",
 		Flag = "Beast",
 		Callback = function(v)
@@ -3507,7 +3400,7 @@ AuraTab:AddToggle({
 
 
 
-	AuraTab:AddToggle({
+	Breathings:AddToggle({
 		Name = "Snow Aura",
 		Flag = "Snow",
 		Callback = function(v)
@@ -3554,7 +3447,7 @@ AuraTab:AddToggle({
 		end
 	})
 
-	AuraTab:AddToggle({
+	Breathings:AddToggle({
 		Name = "Water Aura",
 		Flag = "Water",
 		Callback = function(v)
@@ -3608,7 +3501,7 @@ AuraTab:AddToggle({
 		end
 	})
 
-AuraTab:AddToggle({
+Breathings:AddToggle({
 		Name = "Insect Aura",
 		Flag = "Insect",
 		Callback = function(v)
@@ -3655,6 +3548,60 @@ AuraTab:AddToggle({
 									}
 									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
 									task.wait(16)
+						end
+					end
+				end)
+			end
+		end
+	})
+
+	Breathings:AddToggle({
+		Name = "Wind Aura",
+		Flag = "Wind",
+		Callback = function(v)
+			getgenv().Wind = v
+			if v then
+				-- Luồng tấn công sát thương
+				task.spawn(function()
+					while getgenv().Wind do 
+						local target = getclosestSkills(game:GetService("Workspace").Mobs)
+						
+						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+							local targetCFrame = nil
+							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
+								targetCFrame = target:GetModelCFrame()
+							end
+
+							if targetCFrame then
+								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+
+								-- Chỉ gây sát thương khi gần hơn 40
+								if distance < 40 then
+									local args = {
+										[1] = "Purifying_wind_damage",
+										[2] = game.Players.LocalPlayer.Character,
+										[3] = targetCFrame
+									}          
+									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
+								end
+							end
+						end
+						task.wait(5)
+					end
+				end)
+
+				-- Luồng kích hoạt skill
+				task.spawn(function()
+					while getgenv().Wind do
+						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+									local args = {
+										[1] = "skil_ting_asd",
+										[2] = game.Players.LocalPlayer,
+										[3] = "wind_breathing_purifying_wind",
+										[4] = 5
+									}
+									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+									task.wait(13)
 						end
 					end
 				end)
