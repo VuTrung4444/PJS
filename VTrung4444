@@ -3505,6 +3505,55 @@ AuraTab:AddToggle({
 		end
 	})
 
+
+
+	AuraTab:AddToggle({
+		Name = "Snow Aura",
+		Flag = "Snow",
+		Callback = function(v)
+			getgenv().Snow = v
+			if v then
+				-- Tấn công nếu gần boss
+				task.spawn(function()
+					while getgenv().Snow do 
+						local bossEntity = getclosest(AllowedBosses, game:GetService("Workspace").Mobs)
+						
+						if bossEntity and bossEntity:FindFirstChild("Humanoid") and bossEntity.Humanoid.Health > 0 then
+							local bossCFrame = bossEntity:GetModelCFrame()
+							local distance = (bossCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+
+							if distance < 25 then
+								local args = {
+									[1] = "snow_breathing_frost_path_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = bossCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))     
+							end           
+						end
+						task.wait(0.3)
+					end
+				end)
+
+				-- Kích hoạt skill định kỳ
+				task.spawn(function()
+					while getgenv().Snow do
+						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+							local args = {
+								[1] = "skil_ting_asd",
+								[2] = game.Players.LocalPlayer,
+								[3] = "snow_breathing_frost_path",
+								[4] = 5
+							}
+							game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+							task.wait(18)
+						end
+					end
+				end)
+			end
+		end
+	})
+
 	--MoveAround--
 
 	local MoveLoop = nil
