@@ -509,7 +509,7 @@
 		["Kiribating Village"] = CFrame.new(120, 282, -1743),
 		["Zapiwara Cave"] = CFrame.new(-38, 275, -2403),
 		["Ushumaro Village"] = CFrame.new(-90, 354, -3170),
-		["Butterfly Mansion"] = CFrame.new(3001, 316, -3806),
+		["Butterfly Mension"] = CFrame.new(3001, 316, -3806),
 		["Final Selection"] = CFrame.new(5258, 365, -2422),
 		["Zapiwara Mountain"] = CFrame.new(-366, 425, -2371),
 		["Wind Trainer"] = CFrame.new(1797, 334, -3466),
@@ -2169,7 +2169,7 @@ Ect:AddToggle({
 		if SelectedMap == "Map1" then
 			LocationsToUse = Map1List
 			BossesToUse = BossesMap1List
-			SelectedArea = "Butterfly Mansion"
+			SelectedArea = "Butterfly Mension"
 		elseif SelectedMap == "Map2" then
 			LocationsToUse = Map2List
 			BossesToUse = BossesMap2List
