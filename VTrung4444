@@ -2849,7 +2849,7 @@ Ect:AddToggle({
 
 
 	AuraTab:AddToggle({
-		Name = "Tamari Aura [Near Mobs]",
+		Name = "Tamari Aura",
 		Flag = "Tamari",
 		Callback = function(v)
 			getgenv().Tamari = v
@@ -2874,19 +2874,19 @@ Ect:AddToggle({
 								-- Gây sát thương ngay lập tức nếu mục tiêu trong phạm vi
 								if distance < 40 then
 									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
-										"Tamari_Normal_Throw_Damage_new",
+										"Tamari_Normal_Throw",
 										game.Players.LocalPlayer.Character,
 										targetCFrame
 									)
 
 									-- Kiểm tra lại nếu target còn sống sau đòn tấn công
 									if target.Parent and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-										task.wait(5)
+										task.wait(6)
 									end
 								end
 							end
 						end
-						task.wait(0.1) -- Kiểm tra mục tiêu mới nhanh hơn
+						task.wait(0.2) -- Kiểm tra mục tiêu mới nhanh hơn
 					end
 				end)
 
@@ -2901,7 +2901,7 @@ Ect:AddToggle({
 								5
 							)        
 						end
-						task.wait(12) 
+						task.wait(13) 
 					end
 				end)
 			end
