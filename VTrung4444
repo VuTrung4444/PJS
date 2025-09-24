@@ -808,7 +808,6 @@
             local player = Players.LocalPlayer
 
             local targetNames = {
-                "Frost Touched Cloth",
 				"Tanjiro Haorie",
 				"Ichimatsu Haorie",
 				"Snow Katana",
@@ -817,6 +816,7 @@
 				"Banigaru Mask",
                 "Lightning Katana",
                 "Insect Katana",
+				"Beast Katanas",
                 "Giyu's Water Katana",
                 "Shinobu Haorie",
                 "Flame Necklace",
