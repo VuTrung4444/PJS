@@ -810,6 +810,8 @@
             local targetNames = {
 				"Tanjiro Haorie",
 				"Ichimatsu Haorie",
+				"Blood Necklace",
+				"Mist Necklace",
 				"Snow Katana",
 				"Ominous Blindfold",
 				"Gem Stone Eyepatch",
@@ -2434,7 +2436,7 @@ Ect:AddToggle({
 							200,
 							200
 						)
-						task.wait(0.3)
+						task.wait(0.275)
 					end
 				end
 			end
@@ -2496,7 +2498,7 @@ Ect:AddToggle({
 
 				while not v and getgenv().AllArrow do
 					v = getclosestSkills(parentFolder)
-					task.wait(0.3) 
+					task.wait(0.2) 
 				end
 
 				while getgenv().AllArrow do
@@ -2521,7 +2523,7 @@ Ect:AddToggle({
 									200,
 									200
 								)
-								task.wait(0.2) 
+								task.wait(0.275) 
 							end
 						end
 					end
