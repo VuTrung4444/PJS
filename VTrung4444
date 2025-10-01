@@ -1382,42 +1382,70 @@ Gourd:AddToggle({
 
 
 
-	MiscSection:AddToggle({
-		Name = "No Fog",
-		Flag = "NF",
-		Keybind = false,
-		Callback = function (v)
-			if v == true then
-				for index, light in pairs(game:GetService("Lighting"):GetChildren()) do
-					if light.Name == "Atmosphere" or string.find(light.Name, "Blur") or string.find(light.Name, "Bloom") then
-						light:Destroy()
-					end
-				end
-				game:GetService("Lighting").FogEnd = 1000000
+MiscSection:AddToggle({
+	Name = "No Fog",
+	Flag = "NF",
+	Keybind = false,
+	Callback = function (v)
+		if v == true then
 
-				if not getgenv().DisableDamageTextConnection then
-					getgenv().DisableDamageTextConnection = game:GetService("RunService").Stepped:Connect(function()
-						local damageFolder = workspace:FindFirstChild("Debree") and workspace.Debree:FindFirstChild("Damage_Folder")
-						if damageFolder then
-							for _, dmgText in pairs(damageFolder:GetChildren()) do
-								if dmgText:IsA("Part") then
-									dmgText:Destroy()
-								end
+			for index, light in pairs(game:GetService("Lighting"):GetChildren()) do
+				if light.Name == "Atmosphere" or string.find(light.Name, "Blur") or string.find(light.Name, "Bloom") then
+					light:Destroy()
+				end
+			end
+			game:GetService("Lighting").FogEnd = 1000000
+
+
+			if not getgenv().DisableDamageTextConnection then
+				getgenv().DisableDamageTextConnection = game:GetService("RunService").Stepped:Connect(function()
+					local damageFolder = workspace:FindFirstChild("Debree") and workspace.Debree:FindFirstChild("Damage_Folder")
+					if damageFolder then
+						for _, dmgText in pairs(damageFolder:GetChildren()) do
+							if dmgText:IsA("Part") then
+								dmgText:Destroy()
 							end
+						end
+					end
+				end)
+			end
+
+
+			local success, err = pcall(function()
+				local player = game:GetService("Players").LocalPlayer
+				local comboNumerator = player:WaitForChild("PlayerGui"):WaitForChild("Pop_Ups"):WaitForChild("Combo_Numerator")
+
+
+				comboNumerator.Visible = false
+
+
+				if not getgenv().DisableComboListener then
+					getgenv().DisableComboListener = comboNumerator:GetPropertyChangedSignal("Visible"):Connect(function()
+						if comboNumerator.Visible == true then
+							comboNumerator.Visible = false
 						end
 					end)
 				end
+			end)
 
-			elseif v == false then
-				print("1")
 
-				if getgenv().DisableDamageTextConnection then
-					getgenv().DisableDamageTextConnection:Disconnect()
-					getgenv().DisableDamageTextConnection = nil
-				end
+		elseif v == false then
+
+
+			if getgenv().DisableDamageTextConnection then
+				getgenv().DisableDamageTextConnection:Disconnect()
+				getgenv().DisableDamageTextConnection = nil
+			end
+
+
+			if getgenv().DisableComboListener then
+				getgenv().DisableComboListener:Disconnect()
+				getgenv().DisableComboListener = nil
 			end
 		end
-	})
+	end
+})
+
 
 	MiscSection:AddToggle({
 		Name = "War Drums",
