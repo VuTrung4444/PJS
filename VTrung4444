@@ -803,7 +803,7 @@
     Default = false,
     Callback = function(enabled)
         if enabled then
-            -- CODE bán vật phẩm khi toggle bật
+
             local Players = game:GetService("Players")
             local player = Players.LocalPlayer
 
@@ -851,6 +851,25 @@
 				"Mist Katana",
 				"Murasakiiro Sutoraipu Haorie",
 				"Olive Green Flower Haorie",
+				"Green Vine Haorie",
+				"Dark Green Haorie",
+				"Black Lilly Haorie",
+				"Black Hooded Scarf",
+				"Old Lantern",
+				"Brown Scarf",
+				"Butterfly Necklace",
+				"Fawx Mask",
+				"Flower Fox Mask",
+				"Fox King Mask",
+				"Foxie Mask",
+				"Purple Foxie Mask",
+				"Lantern Of Everlasting Glow",
+				"Rusty Necklace",
+				"Reaper Necklace",
+				"Rusty Necklace",
+				"Thunder Necklace",
+				"Water Necklace",
+				"Sakura Haorie",
 				"Tokosen Haorie",
 				"Uncertained Times Scarf",
 				"Tonakai Keikai Mask",
