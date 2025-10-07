@@ -1402,61 +1402,7 @@ Gourd:AddToggle({
 			end
 		end
 	end
-
-	-- Gọi hàm để giám sát khi kĩ năng được sử dụng
 	monitorKoketsuArrow()
-
-
-
-MiscSection:AddToggle({
-	Name = "Auto Open Hell",
-	Flag = "AutoTP",
-	Keybind = false,
-	Callback = function(v)
-		if v == true then
-			local RunService = game:GetService("RunService")
-			local Players = game:GetService("Players")
-			local Workspace = game:GetService("Workspace")
-
-			local Player = Players.LocalPlayer
-
-			local function smoothMoveTo(position, speed)
-				local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-				if not hrp or not position then return end
-
-				local startPos = hrp.Position
-				local delta = position - startPos
-				local duration = delta.Magnitude / speed
-				local startTime = tick()
-
-				while tick() - startTime < duration do
-					local t = math.min((tick() - startTime) / duration, 1)
-					local nextPos = startPos + delta * t
-					hrp.Velocity = Vector3.new(0, 0, 0)
-					hrp.CFrame = CFrame.new(nextPos)
-					RunService.Heartbeat:Wait()
-				end
-
-				hrp.Velocity = Vector3.new(0, 0, 0)
-				hrp.CFrame = CFrame.new(position)
-			end
-
-
-			coroutine.wrap(function()
-				local targetPos = Vector3.new(5549.56, -53.07, 2471.93)
-				smoothMoveTo(targetPos, 200)
-
-				task.wait(0.5)
-
-				local success, err = pcall(function()
-					local prox = Workspace:WaitForChild("HardMode"):WaitForChild("ProximityPrompt")
-					fireproximityprompt(prox)
-				end)
-
-			end)()
-		end
-	end
-})
 
 
 MiscSection:AddToggle({
@@ -1523,6 +1469,78 @@ MiscSection:AddToggle({
 	end
 })
 
+MiscSection:AddToggle({
+	Name = "Auto Buy EXP",
+	Flag = "AutoBuyEXP",
+	Keybind = false,
+	Callback = function(v)
+		if v == true then
+			getgenv().AutoBuyEXP = true
+			spawn(function()
+				while getgenv().AutoBuyEXP do
+					local prompt = workspace["Shop Items"]["EXP Elixir"].Handle:FindFirstChildOfClass("ProximityPrompt")
+					if prompt then
+						fireproximityprompt(prompt)
+					end
+					task.wait(0.25)
+				end
+			end)
+		else
+			getgenv().AutoBuyEXP = false
+		end
+	end
+})
+
+
+MiscSection:AddToggle({
+	Name = "Auto Open Hell",
+	Flag = "AutoTP",
+	Keybind = false,
+	Callback = function(v)
+		if v == true and placeId == 11468034852 then
+			local RunService = game:GetService("RunService")
+			local Players = game:GetService("Players")
+			local Workspace = game:GetService("Workspace")
+
+			local Player = Players.LocalPlayer
+
+			local function smoothMoveTo(position, speed)
+				local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+				if not hrp or not position then return end
+
+				local startPos = hrp.Position
+				local delta = position - startPos
+				local duration = delta.Magnitude / speed
+				local startTime = tick()
+
+				while tick() - startTime < duration do
+					local t = math.min((tick() - startTime) / duration, 1)
+					local nextPos = startPos + delta * t
+					hrp.Velocity = Vector3.new(0, 0, 0)
+					hrp.CFrame = CFrame.new(nextPos)
+					RunService.Heartbeat:Wait()
+				end
+
+				hrp.Velocity = Vector3.new(0, 0, 0)
+				hrp.CFrame = CFrame.new(position)
+			end
+
+
+			coroutine.wrap(function()
+				local targetPos = Vector3.new(5549.56, -53.07, 2471.93)
+				smoothMoveTo(targetPos, 200)
+
+				task.wait(0.5)
+
+				local success, err = pcall(function()
+					local prox = Workspace:WaitForChild("HardMode"):WaitForChild("ProximityPrompt")
+					fireproximityprompt(prox)
+				end)
+
+			end)()
+		end
+	end
+})
 
 	MiscSection:AddToggle({
 		Name = "War Drums",
@@ -1892,7 +1910,7 @@ MiscSection:AddToggle({
 		end
 	})
 
-	-- Khởi tạo trạng thái cho 2 boss
+
 	local flesh = 0
 	local enmu = 0
 	local fly = 0
@@ -1912,7 +1930,7 @@ MiscSection:AddToggle({
 					if hrp and not movedToCodeAndSafe then 
 
 
-						local codePos = Vector3.new(1950.95, 24.48, -76.23) -- 🛠️ Thay tọa độ Code thật ở đây
+						local codePos = Vector3.new(1950.95, 24.48, -76.23)
 						Tween(CFrame.new(codePos))
 						task.wait(2)
 
