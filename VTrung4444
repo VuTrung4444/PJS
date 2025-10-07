@@ -137,7 +137,7 @@
 				-- Khi toggle được bật, chạy đoạn thay đổi tên hiển thị
 				getgenv().Config = {
 					FakeDisplayName = "SKTxT1xLoc",
-					FakeName = "acquysaulan",
+					FakeName = "SKTxT1xLoc",
 					FakeId = 1, -- ID giả để thay UserId
 				}
 
@@ -3834,7 +3834,7 @@ Breathings:AddToggle({
 		end
 	end)
 
-	MiscSection:AddToggle({
+	--[[MiscSection:AddToggle({
 		Name = "Fake Name/DisplayName",
 		Default = false,
 		Callback = function(state)
@@ -3977,9 +3977,10 @@ Breathings:AddToggle({
 				lp.DisplayName = Config.FakeDisplayName
 			end
 		end
-	})
+	})]]
 
-	if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
+
+if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
 getgenv().AutoCollect = false
 getgenv().TP_SPEED = 200    
 getgenv().TP_DELAY = 0.25   
