@@ -1408,6 +1408,55 @@ Gourd:AddToggle({
 
 
 
+MiscSection:AddToggle({
+	Name = "Auto Open Hell",
+	Flag = "AutoTP",
+	Keybind = false,
+	Callback = function(v)
+		if v == true then
+			local RunService = game:GetService("RunService")
+			local Players = game:GetService("Players")
+			local Workspace = game:GetService("Workspace")
+
+			local Player = Players.LocalPlayer
+
+			local function smoothMoveTo(position, speed)
+				local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+				if not hrp or not position then return end
+
+				local startPos = hrp.Position
+				local delta = position - startPos
+				local duration = delta.Magnitude / speed
+				local startTime = tick()
+
+				while tick() - startTime < duration do
+					local t = math.min((tick() - startTime) / duration, 1)
+					local nextPos = startPos + delta * t
+					hrp.Velocity = Vector3.new(0, 0, 0)
+					hrp.CFrame = CFrame.new(nextPos)
+					RunService.Heartbeat:Wait()
+				end
+
+				hrp.Velocity = Vector3.new(0, 0, 0)
+				hrp.CFrame = CFrame.new(position)
+			end
+
+
+			coroutine.wrap(function()
+				local targetPos = Vector3.new(5549.56, -53.07, 2471.93)
+				smoothMoveTo(targetPos, 200)
+
+				task.wait(0.5)
+
+				local success, err = pcall(function()
+					local prox = Workspace:WaitForChild("HardMode"):WaitForChild("ProximityPrompt")
+					fireproximityprompt(prox)
+				end)
+
+			end)()
+		end
+	end
+})
 
 
 MiscSection:AddToggle({
@@ -1855,64 +1904,26 @@ MiscSection:AddToggle({
 		Flag = "AutoMugen",
 		Callback = function(State)
 			task.spawn(function()
-				if placeId == 13883059853 or placeId == 17387482786 then
-	while State and IsOpen() do
-		local clock2 = workspace:FindFirstChild("MugenTrain") and workspace.MugenTrain:FindFirstChild("Clock2")
-		if clock2 and clock2:FindFirstChild("Hours") and clock2:FindFirstChild("Minutes") then
-			local hourCF = clock2.Hours:GetPivot()
-			local minuteCF = clock2.Minutes:GetPivot()
-
-			
-			local function isCloseVector(v1, v2, epsilon)
-				return (v1 - v2).Magnitude <= (epsilon or 0.001)
-			end
-
-			if isCloseVector(hourCF.RightVector, Vector3.new(0, 1, 0)) and
-			isCloseVector(hourCF.UpVector, Vector3.new(0, 0, -1)) and
-			isCloseVector(hourCF.LookVector, Vector3.new(1, 0, 0)) and
-			isCloseVector(minuteCF.RightVector, Vector3.new(1, 0, 0)) and
-			isCloseVector(minuteCF.UpVector, Vector3.new(0, 0, -1)) and
-			isCloseVector(minuteCF.LookVector, Vector3.new(0, -1, 0)) then
-
-				
-				-- Gọi lệnh tắt AutoFarm & MoveAround + chờ nhỏ
-				pcall(StopAutoFarm)
-				pcall(StopMoveAround)
-				task.wait(0.25)
-
-				local targetPosition = Vector3.new(758.41, 500.17, 1093.127) -- 🛠️ Thay toạ độ thật ở đây
-				Tween(CFrame.new(targetPosition))
-				print(">> Clock2 đúng vị trí => Di chuyển tới tọa độ")
-				break
-			end
-		end
-		task.wait(0.5)
-	end
-
-				elseif placeId == 11468034852 then
+				if placeId == 11468034852 then
 				
 					local player = game.Players.LocalPlayer
 					local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 
-					if hrp and not movedToCodeAndSafe then  -- Kiểm tra xem chưa di chuyển và chưa thực hiện hành động này
-					print("Đúng toạ độ")
+					if hrp and not movedToCodeAndSafe then 
 
-						-- Di chuyển đến toạ độ CODE
+
 						local codePos = Vector3.new(1950.95, 24.48, -76.23) -- 🛠️ Thay tọa độ Code thật ở đây
 						Tween(CFrame.new(codePos))
-						print(">> Di chuyển đến toạ độ CODE")
 						task.wait(2)
 
 						-- Di chuyển đến Safe
 						local safePos = Vector3.new(1699.58, 25, -112.58)
 						Tween(CFrame.new(safePos))
-						print(">> Di chuyển đến toạ độ SAFE")
 
-						movedToCodeAndSafe = true  -- Đánh dấu là đã di chuyển
+						movedToCodeAndSafe = true
 					end
 					task.wait(0.5)
 
-					-- Bắt đầu xử lý sau khi di chuyển
 					while State and IsOpen() do
 						local config = workspace:FindFirstChild("Mobs") and workspace.Mobs:FindFirstChild("Npc_Configuration")
 
