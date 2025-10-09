@@ -654,6 +654,24 @@
 	local EctFolder = ReplicatedStorage:WaitForChild("Misc")
 	local Clashing = EctFolder:WaitForChild("Clashing")
 
+
+	MainSection:AddToggle({
+		Name = "Arrow Aura [Near Mobs]",
+		Flag = "Arrow",
+		Callback = function (v)
+			getgenv().Arrow = v
+		end
+	})
+
+	MainSection:AddToggle({
+		Name = "Arrow Aura [NoLag]",
+		Flag = "ArrowAll",
+		Callback = function (v)
+			getgenv().AllArrow = v
+		end
+	})
+
+
 	MainSection:AddToggle({
 		Name = "Farm",
 		Flag = "FarmSelectedBosses",
@@ -678,7 +696,7 @@
 		Flag = "MoveAroundBosses",
 		Callback = function(v)
 			getgenv().MoveAround = v
-			if v and placeId == 13883279773 or placeId == 13883059853 then
+			if v then
 				task.delay(0.1, function()
 					if not MoveLoopRunning then
 						startMoveLoop()
@@ -692,22 +710,6 @@
 				end
 				StopMoveAround()
 			end
-		end
-	})
-
-	MainSection:AddToggle({
-		Name = "Arrow Aura [Near Mobs]",
-		Flag = "Arrow",
-		Callback = function (v)
-			getgenv().Arrow = v
-		end
-	})
-
-	MainSection:AddToggle({
-		Name = "Arrow Aura [NoLag]",
-		Flag = "ArrowAll",
-		Callback = function (v)
-			getgenv().AllArrow = v
 		end
 	})
 
@@ -2713,7 +2715,7 @@ Ect:AddToggle({
 				TweenFa = nil
 			end
 
-			while getgenv().Farm and placeId == 13883279773 or placeId == 13883059853 do
+			while getgenv().Farm do
 				-- Cập nhật danh sách boss còn lại
 				UpdateActiveBossLocations()
 
