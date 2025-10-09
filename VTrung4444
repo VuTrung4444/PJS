@@ -1445,84 +1445,54 @@ Gourd:AddToggle({
 	})
 
 MiscSection:AddToggle({
-	Name = "No Fog + FPS Boost",
-	Flag = "NFPS",
+	Name = "No Fog + FPS Boost (One-Time)",
+	Flag = "NFPS_OneTime",
 	Keybind = false,
 	Callback = function(v)
 		local Lighting = game:GetService("Lighting")
-		local RunService = game:GetService("RunService")
 		local Players = game:GetService("Players")
 		local player = Players.LocalPlayer
 
-		-- Hàm xóa hiệu ứng ánh sáng
-		local function clearLighting()
-			for _, light in ipairs(Lighting:GetChildren()) do
-				if light:IsA("Atmosphere") or light:IsA("BloomEffect") or light:IsA("BlurEffect")
-				or light:IsA("ColorCorrectionEffect") or light:IsA("SunRaysEffect") then
-					light:Destroy()
-				end
-			end
-			Lighting.GlobalShadows = false
-			Lighting.FogEnd = 1e6
-			Lighting.Brightness = 1
-			Lighting.EnvironmentDiffuseScale = 0
-			Lighting.EnvironmentSpecularScale = 0
-		end
-
-		-- Hàm giảm tải đối tượng trong workspace
-		local function optimizeWorkspace()
-			for _, obj in ipairs(workspace:GetDescendants()) do
-				if obj:IsA("BasePart") then
-					obj.Material = Enum.Material.Plastic
-					obj.Reflectance = 0
-					obj.CastShadow = false
-				elseif obj:IsA("Decal") or obj:IsA("Texture") then
-					obj.Transparency = 1
-				elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
-					obj.Enabled = false
-				elseif obj:IsA("Beam") then
-					obj.Enabled = false
-				end
-			end
-		end
-
-		-- Dọn connections khi tắt
 		if not v then
-			if getgenv().NFPS_DamageConnection then
-				getgenv().NFPS_DamageConnection:Disconnect()
-				getgenv().NFPS_DamageConnection = nil
-			end
+			-- Khi tắt toggle -> dọn connections (nếu có)
 			if getgenv().NFPS_ComboConnection then
 				getgenv().NFPS_ComboConnection:Disconnect()
 				getgenv().NFPS_ComboConnection = nil
 			end
-			print("[NFPS] Disabled and cleaned up.")
+			print("[NFPS] Disabled. No background loops remain.")
 			return
 		end
 
-		-- Kích hoạt chế độ No Fog + FPS Boost
-		clearLighting()
-		optimizeWorkspace()
-		print("[NFPS] Lighting and workspace optimized.")
-
-		-- Liên tục xóa damage text để tránh spam lag
-		if not getgenv().NFPS_DamageConnection then
-			getgenv().NFPS_DamageConnection = RunService.Heartbeat:Connect(function()
-				local debree = workspace:FindFirstChild("Debree")
-				if not debree then return end
-				local dmgFolder = debree:FindFirstChild("Damage_Folder")
-				if not dmgFolder then return end
-
-				for _, dmg in ipairs(dmgFolder:GetChildren()) do
-					if dmg:IsA("Part") then
-						dmg:Destroy()
-					end
-				end
-			end)
-			print("[NFPS] Auto damage cleanup active.")
+		-- 🔹 Xóa hiệu ứng ánh sáng và sương mù
+		for _, eff in ipairs(Lighting:GetChildren()) do
+			if eff:IsA("Atmosphere") or eff:IsA("BloomEffect") or eff:IsA("BlurEffect")
+			or eff:IsA("ColorCorrectionEffect") or eff:IsA("SunRaysEffect") then
+				eff:Destroy()
+			end
 		end
+		Lighting.FogEnd = 1e6
+		Lighting.GlobalShadows = false
+		Lighting.EnvironmentDiffuseScale = 0
+		Lighting.EnvironmentSpecularScale = 0
+		print("[NFPS] Fog & post-processing removed.")
 
-		-- Ẩn Combo UI an toàn
+		-- 🔹 Tối ưu workspace (chỉ chạy 1 lần duy nhất)
+		local count = 0
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") then
+				obj.Material = Enum.Material.Plastic
+				obj.Reflectance = 0
+				obj.CastShadow = false
+				count += 1
+			elseif obj:IsA("Decal") or obj:IsA("Texture") then
+				obj.Transparency = 1
+			elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+				obj.Enabled = false
+			end
+		end
+		print(string.format("[NFPS] Optimized %d objects in workspace.", count))
+
+		-- 🔹 Ẩn Combo UI (chạy 1 lần)
 		task.spawn(function()
 			local success, err = pcall(function()
 				local gui = player:WaitForChild("PlayerGui", 5)
@@ -1533,29 +1503,20 @@ MiscSection:AddToggle({
 				if not combo then return end
 
 				combo.Visible = false
-				if not getgenv().NFPS_ComboConnection then
-					getgenv().NFPS_ComboConnection = combo:GetPropertyChangedSignal("Visible"):Connect(function()
-						if combo and combo.Parent and combo.Visible then
-							combo.Visible = false
-						end
-					end)
-					print("[NFPS] Combo UI hidden safely.")
-				end
+				getgenv().NFPS_ComboConnection = combo:GetPropertyChangedSignal("Visible"):Connect(function()
+					if combo and combo.Parent and combo.Visible then
+						combo.Visible = false
+					end
+				end)
 			end)
 			if not success then
-				warn("[NFPS] Failed to hide combo:", err)
+				warn("[NFPS] Combo hide failed:", err)
 			end
 		end)
 
-		-- FPS booster định kỳ (5s quét 1 lần để tắt hiệu ứng mới sinh)
-		task.spawn(function()
-			while v and task.wait(5) do
-				pcall(optimizeWorkspace)
-			end
-		end)
+		print("[NFPS] One-time optimization complete. ✅")
 	end
 })
-
 
 MiscSection:AddToggle({
 	Name = "Auto Buy EXP",
@@ -2245,7 +2206,7 @@ local function getFurthestSpawnLocations(count)
 
     local result = {}
     for i = 1, math.min(count, #positions) do
-        local adjustedPos = positions[i].pos - Vector3.new(0, 150, 0)
+        local adjustedPos = positions[i].pos - Vector3.new(0, -150, 0)
         table.insert(result, adjustedPos)
     end
 
@@ -2288,7 +2249,6 @@ local function startAutoMoveLoop()
                 task.wait(30)
 
             else
-                warn("[AutoMove] ≤3 mobs - chờ 15s")
                 task.wait(15)
             end
         end
