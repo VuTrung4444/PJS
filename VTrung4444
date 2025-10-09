@@ -661,7 +661,7 @@
 			getgenv().Farm = v
 				if antifallActive ~= nil and antifallActive then
 					antifallActive = false
-					DisableAntiFall() -- Gọi hàm sửa lỗi để tắt AntiFall
+					DisableAntiFall()
 
 					local plr = game.Players.LocalPlayer
 					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
@@ -678,7 +678,7 @@
 		Flag = "MoveAroundBosses",
 		Callback = function(v)
 			getgenv().MoveAround = v
-			if v then
+			if v and placeId == 13883279773 or placeId == 13883059853 then
 				task.delay(0.1, function()
 					if not MoveLoopRunning then
 						startMoveLoop()
@@ -2002,10 +2002,10 @@ MiscSection:AddToggle({
 						end
 
 						task.wait(1)
-					end  -- end của while loop
-				end  -- end của elseif placeId == 11468034852
+					end
+				end
 			end)
-		end  -- end của Callback function
+		end
 	})
 
 
@@ -2713,7 +2713,7 @@ Ect:AddToggle({
 				TweenFa = nil
 			end
 
-			while getgenv().Farm do
+			while getgenv().Farm and placeId == 13883279773 or placeId == 13883059853 do
 				-- Cập nhật danh sách boss còn lại
 				UpdateActiveBossLocations()
 
@@ -4154,12 +4154,12 @@ MiscSection:AddToggle({
 					local offset = Vector3.new(10, 5, 0)
 					local targetPos = muzanPos + offset
 
-					-- Tính khoảng cách và dùng TweenService để teleport mượt
+
 					local Magnitude = (hrp.Position - targetPos).Magnitude
 					if Magnitude then
 						local Cur = TweenService:Create(hrp, TweenInfo.new(Magnitude / TweenSpeed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
 						Cur:Play()
-						Cur.Completed:Wait() -- Đợi teleport hoàn tất trước khi tiếp tục
+						Cur.Completed:Wait()
 					end
 				end
 			end)
