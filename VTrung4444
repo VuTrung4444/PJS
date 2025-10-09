@@ -1445,8 +1445,8 @@ Gourd:AddToggle({
 	})
 
 MiscSection:AddToggle({
-	Name = "No Fog + FPS Boost (One-Time)",
-	Flag = "NFPS_OneTime",
+	Name = "No Fog + Disable Visual Spam",
+	Flag = "NFPS_EventOnly",
 	Keybind = false,
 	Callback = function(v)
 		local Lighting = game:GetService("Lighting")
@@ -1454,16 +1454,19 @@ MiscSection:AddToggle({
 		local player = Players.LocalPlayer
 
 		if not v then
-			-- Khi tắt toggle -> dọn connections (nếu có)
-			if getgenv().NFPS_ComboConnection then
-				getgenv().NFPS_ComboConnection:Disconnect()
-				getgenv().NFPS_ComboConnection = nil
+			if getgenv().NFPS_Connections then
+				for _, c in pairs(getgenv().NFPS_Connections) do
+					c:Disconnect()
+				end
+				getgenv().NFPS_Connections = nil
 			end
-			print("[NFPS] Disabled. No background loops remain.")
+			print("[NFPS] Disabled (no background processes).")
 			return
 		end
 
-		-- 🔹 Xóa hiệu ứng ánh sáng và sương mù
+		getgenv().NFPS_Connections = {}
+
+		-- 🔹 Xóa hiệu ứng ánh sáng (1 lần)
 		for _, eff in ipairs(Lighting:GetChildren()) do
 			if eff:IsA("Atmosphere") or eff:IsA("BloomEffect") or eff:IsA("BlurEffect")
 			or eff:IsA("ColorCorrectionEffect") or eff:IsA("SunRaysEffect") then
@@ -1471,50 +1474,37 @@ MiscSection:AddToggle({
 			end
 		end
 		Lighting.FogEnd = 1e6
-		Lighting.GlobalShadows = false
-		Lighting.EnvironmentDiffuseScale = 0
-		Lighting.EnvironmentSpecularScale = 0
-		print("[NFPS] Fog & post-processing removed.")
 
-		-- 🔹 Tối ưu workspace (chỉ chạy 1 lần duy nhất)
-		local count = 0
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("BasePart") then
-				obj.Material = Enum.Material.Plastic
-				obj.Reflectance = 0
-				obj.CastShadow = false
-				count += 1
-			elseif obj:IsA("Decal") or obj:IsA("Texture") then
-				obj.Transparency = 1
-			elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
-				obj.Enabled = false
+		-- 🔹 Tự động xóa DamageText khi nó được spawn
+		local debree = workspace:FindFirstChild("Debree")
+		if debree then
+			local folder = debree:FindFirstChild("Damage_Folder")
+			if folder then
+				table.insert(getgenv().NFPS_Connections, folder.ChildAdded:Connect(function(child)
+					if child:IsA("Part") then
+						child:Destroy()
+					end
+				end))
+				-- xóa luôn text hiện tại
+				for _, c in ipairs(folder:GetChildren()) do
+					if c:IsA("Part") then c:Destroy() end
+				end
 			end
 		end
-		print(string.format("[NFPS] Optimized %d objects in workspace.", count))
 
-		-- 🔹 Ẩn Combo UI (chạy 1 lần)
+		-- 🔹 Tắt Combo UI khi nó hiện lại
 		task.spawn(function()
-			local success, err = pcall(function()
-				local gui = player:WaitForChild("PlayerGui", 5)
-				if not gui then return end
-				local popUps = gui:FindFirstChild("Pop_Ups")
-				if not popUps then return end
-				local combo = popUps:FindFirstChild("Combo_Numerator")
-				if not combo then return end
-
+			local gui = player:WaitForChild("PlayerGui", 5)
+			local combo = gui and gui:FindFirstChild("Pop_Ups") and gui.Pop_Ups:FindFirstChild("Combo_Numerator")
+			if combo then
 				combo.Visible = false
-				getgenv().NFPS_ComboConnection = combo:GetPropertyChangedSignal("Visible"):Connect(function()
-					if combo and combo.Parent and combo.Visible then
-						combo.Visible = false
-					end
-				end)
-			end)
-			if not success then
-				warn("[NFPS] Combo hide failed:", err)
+				table.insert(getgenv().NFPS_Connections, combo:GetPropertyChangedSignal("Visible"):Connect(function()
+					if combo.Visible then combo.Visible = false end
+				end))
 			end
 		end)
 
-		print("[NFPS] One-time optimization complete. ✅")
+		print("[NFPS] Event-only version enabled. ✅")
 	end
 })
 
