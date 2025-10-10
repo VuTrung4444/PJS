@@ -2112,7 +2112,7 @@ local function getFurthestSpawnLocations(count)
 
     local result = {}
     for i = 1, math.min(count, #positions) do
-        local adjustedPos = positions[i].pos - Vector3.new(0, -150, 0)
+        local adjustedPos = positions[i].pos - Vector3.new(0, 150, 0)
         table.insert(result, adjustedPos)
     end
 
