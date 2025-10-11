@@ -2133,7 +2133,7 @@ local function startAutoMoveLoop()
 
             local mobCount = #mobsFolder:GetChildren()
 
-            if mobCount > 20 then
+            if mobCount > 10 then
                 local locations = getFurthestSpawnLocations(3)
                 for _, pos in ipairs(locations) do
                     if not getgenv().AutoMoveEnabled then break end
