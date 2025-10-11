@@ -2134,16 +2134,6 @@ local function startAutoMoveLoop()
             local mobCount = #mobsFolder:GetChildren()
 
             if mobCount > 20 then
-                local locations = getFurthestSpawnLocations(5)
-                for _, pos in ipairs(locations) do
-                    if not getgenv().AutoMoveEnabled then break end
-                    smoothMoveTo(pos, 200)
-                    applyFloat(pos)
-                    task.wait(0.5)
-                end
-                task.wait(15)
-
-            elseif mobCount > 3 then
                 local locations = getFurthestSpawnLocations(3)
                 for _, pos in ipairs(locations) do
                     if not getgenv().AutoMoveEnabled then break end
@@ -2151,10 +2141,20 @@ local function startAutoMoveLoop()
                     applyFloat(pos)
                     task.wait(0.5)
                 end
-                task.wait(30)
+                task.wait(20)
+
+            elseif mobCount > 2 then
+                local locations = getFurthestSpawnLocations(3)
+                for _, pos in ipairs(locations) do
+                    if not getgenv().AutoMoveEnabled then break end
+                    smoothMoveTo(pos, 200)
+                    applyFloat(pos)
+                    task.wait(0.5)
+                end
+                task.wait(40)
 
             else
-                task.wait(15)
+                task.wait(10)
             end
         end
     end)
