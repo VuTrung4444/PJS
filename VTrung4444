@@ -774,31 +774,30 @@
 
 
 
-	MainSection:AddToggle({
-		Name = "Teleport to Target",
-		Flag = "TargetPlayersTeleport",
-		Callback = function(state)
-			if state then
-				local selectedPlayerName = getgenv().selectedPlayerName
-				if selectedPlayerName and selectedPlayerName ~= "" then
-					local target = workspace:FindFirstChild(selectedPlayerName)
-					
-					if target and target:FindFirstChild("HumanoidRootPart") then
-						local playerCharacter = game.Players.LocalPlayer.Character
-						if playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") then
-							local targetPosition = target.HumanoidRootPart.Position
-							local newPosition = Vector3.new(targetPosition.X, targetPosition.Y + 150, targetPosition.Z)
-							
-							-- Đảm bảo HumanoidRootPart tồn tại trước khi MoveTo để tránh lỗi
-							if playerCharacter:FindFirstChild("HumanoidRootPart") then
-								playerCharacter:MoveTo(newPosition)
-							end
-						end
-					end
-				end
-			end
-		end
-	})
+MainSection:AddToggle({
+    Name = "Teleport to Target",
+    Flag = "TargetPlayersTeleport",
+    Callback = function(state)
+        if state then
+            local selectedPlayerName = getgenv().selectedPlayerName
+            if selectedPlayerName and selectedPlayerName ~= "" then
+                local targetPlayer = game.Players:FindFirstChild(selectedPlayerName)
+                
+                if targetPlayer and targetPlayer.Character then
+                    local targetPivot = targetPlayer.Character:GetPivot()
+                    local plr = game.Players.LocalPlayer
+                    local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                    if not hrp then return end
+
+                    local offset = Vector3.new(150, 200, 0)
+
+                    hrp.CFrame = targetPivot + offset
+                end
+            end
+        end
+    end
+})
+
 
 	MainSection:AddToggle({
     Name = "QuickSell",
