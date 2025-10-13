@@ -1391,9 +1391,6 @@ Gourd:AddToggle({
 			if humanoid then
 				humanoid.AnimationPlayed:Connect(function(animation)
 					if animation.Name == "Koketsu_Arrow_actual_anim" then
-						print("Animation Koketsu Arrow bắt đầu.")
-						
-						-- Tắt God Mode khi Koketsu Arrow được sử dụng
 						if godModeState then
 							task.wait(0.35)
 							toggleGodMode(false)
@@ -1739,7 +1736,7 @@ MiscSection:AddToggle({
 		Keybind = false,
 		Callback = function(v)
 			if v then
-				-- Đặt CoolDown của Koketsu Arrow thành 6 khi toggle được bật
+
 				local skills = game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("Power_Adder"):WaitForChild("Arrow"):WaitForChild("Skills")
 				local koketsuArrow = skills:WaitForChild("Koketsu Arrow")
 				local cooldown = koketsuArrow:FindFirstChild("CoolDown")
@@ -1750,6 +1747,33 @@ MiscSection:AddToggle({
 			end
 		end
 	})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+
+getgenv().ShowHackValue = false
+
+
+spawn(function()
+	while task.wait(2) do
+		if getgenv().ShowHackValue then
+			local val = LocalPlayer:FindFirstChild("hacktanbgasd12312312")
+			if val and val:IsA("IntValue") then
+				print("Giá trị hacktanbgasd12312312:", val.Value)
+			end
+		end
+	end
+end)
+
+
+MiscSection:AddToggle({
+	Name = "Kiểm soát anticheat [8 = kick]",
+	Default = false,
+	Callback = function(state)
+		getgenv().ShowHackValue = state
+	end
+})
 
 
 
