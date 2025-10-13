@@ -4095,49 +4095,40 @@ MiscSection:AddToggle({
 
 	end
 
-	if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
-		--FindMuzan--
-		local TweenService = game:GetService("TweenService")
-		local TweenSpeed = 250 -- Điều chỉnh tốc độ teleport
+if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
 
-		local function teleportToMuzan()
-			task.spawn(function()
-				local players = game:GetService("Players")
-				local localPlayer = players.LocalPlayer
-				local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
-				local hrp = character:WaitForChild("HumanoidRootPart")
+	local function teleportToMuzan()
+		task.spawn(function()
+			local players = game:GetService("Players")
+			local localPlayer = players.LocalPlayer
+			local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+			local hrp = character:WaitForChild("HumanoidRootPart")
 
-				local function getMuzanSpawnPos()
-					local muzan = workspace:FindFirstChild("Muzan")
-					if muzan and muzan:FindFirstChild("SpawnPos") then
-						return muzan.SpawnPos.Value
-					end
-					return nil
+			local function getMuzanSpawnPos()
+				local muzan = workspace:FindFirstChild("Muzan")
+				if muzan and muzan:FindFirstChild("SpawnPos") then
+					return muzan.SpawnPos.Value
 				end
-
-				local muzanPos = getMuzanSpawnPos()
-				if muzanPos then
-					local offset = Vector3.new(10, 5, 0)
-					local targetPos = muzanPos + offset
-
-
-					local Magnitude = (hrp.Position - targetPos).Magnitude
-					if Magnitude then
-						local Cur = TweenService:Create(hrp, TweenInfo.new(Magnitude / TweenSpeed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos)})
-						Cur:Play()
-						Cur.Completed:Wait()
-					end
-				end
-			end)
-		end
-
-		MiscSection:AddToggle({
-			Name = "Auto Teleport to Muzan",
-			Flag = "AutoTPMuzan",
-			Callback = function(state)
-				if state then
-					teleportToMuzan()
-				end
+				return nil
 			end
-		})
+
+			local muzanPos = getMuzanSpawnPos()
+			if muzanPos then
+				local offset = Vector3.new(10, 5, 0)
+				local targetPos = muzanPos + offset
+
+				hrp.CFrame = CFrame.new(targetPos)
+			end
+		end)
 	end
+
+	MiscSection:AddToggle({
+		Name = "Auto Teleport to Muzan",
+		Flag = "AutoTPMuzan",
+		Callback = function(state)
+			if state then
+				teleportToMuzan()
+			end
+		end
+	})
+end
