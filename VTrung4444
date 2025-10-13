@@ -740,7 +740,7 @@
 		return nil
 	end
 
-	-- Vòng lặp gây sát thương
+
 	spawn(function()
 		while task.wait(1) do
 			if getgenv().TargetPlayersArrow then
@@ -2799,7 +2799,7 @@ Ect:AddToggle({
 		Callback = function(v)
 			getgenv().Swamp = v
 			if v then
-				-- Tấn công nếu gần boss
+
 				task.spawn(function()
 					while getgenv().Swamp do 
 						local bossEntity = getclosest(AllowedBosses, game:GetService("Workspace").Mobs)
@@ -2821,7 +2821,7 @@ Ect:AddToggle({
 					end
 				end)
 
-				-- Kích hoạt skill định kỳ
+
 				task.spawn(function()
 					while getgenv().Swamp do
 						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
@@ -2840,612 +2840,449 @@ Ect:AddToggle({
 		end
 	})
 
-	AuraTab:AddToggle({
-		Name = "Reaper Aura [Near Mobs]",
-		Flag = "Reaper",
-		Callback = function(v)
-			getgenv().Reaper = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Reaper do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
+AuraTab:AddToggle({
+	Name = "Reaper Aura [Near Mobs/Target Player]",
+	Flag = "Reaper",
+	Callback = function(v)
+		getgenv().Reaper = v
+		if v then
 
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+			task.spawn(function()
+				while getgenv().Reaper do 
+					local target
 
-								-- Chỉ gây sát thương khi gần hơn 25
-								if distance < 25 then
-									local args = {
-										[1] = "reaper-slash_thing_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+
+					if getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "" then
+						target = findPlayerByName(getgenv().selectedPlayerName)
+					else
+						target = getclosestSkills(game:GetService("Workspace").Mobs)
+					end
+
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame
+						if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
+							targetCFrame = target:GetModelCFrame()
+						end
+
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+
+
+							if distance < 25 then
+								local args = {
+									[1] = "reaper-slash_thing_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(2.5)
 					end
-				end)
+					task.wait(2.5)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Reaper do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "reaperbda_reapofdispair",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(9)
-						end
+			task.spawn(function()
+				while getgenv().Reaper do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "reaperbda_reapofdispair",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(9)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
+AuraTab:AddToggle({
+	Name = "Tamari Aura",
+	Flag = "Tamari",
+	Callback = function(v)
+		getgenv().Tamari = v
+		if v then
+			task.spawn(function()
+				while getgenv().Tamari do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-	AuraTab:AddToggle({
-		Name = "Tamari Aura",
-		Flag = "Tamari",
-		Callback = function(v)
-			getgenv().Tamari = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Tamari do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-
-						-- Kiểm tra target tồn tại và có Humanoid hợp lệ
-						if target and target.Parent and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							
-							-- Kiểm tra hàm GetModelCFrame hợp lệ trước khi gọi
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Gây sát thương ngay lập tức nếu mục tiêu trong phạm vi
-								if distance < 40 then
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
-										"Tamari_Normal_Throw",
-										game.Players.LocalPlayer.Character,
-										targetCFrame
-									)
-
-									-- Kiểm tra lại nếu target còn sống sau đòn tấn công
-									if target.Parent and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-										task.wait(6)
-									end
-								end
+					if target and target.Parent and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
+									"Tamari_Normal_Throw",
+									game.Players.LocalPlayer.Character,
+									targetCFrame
+								)
+								task.wait(6)
 							end
 						end
-						task.wait(0.2) -- Kiểm tra mục tiêu mới nhanh hơn
 					end
-				end)
+					task.wait(0.2)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Tamari do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-							game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
-								"skil_ting_asd",
-								game.Players.LocalPlayer,
-								"Tamari2_Normal_Throw",
-								5
-							)        
-						end
-						task.wait(13) 
+			task.spawn(function()
+				while getgenv().Tamari do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
+							"skil_ting_asd",
+							game.Players.LocalPlayer,
+							"Tamari2_Normal_Throw",
+							5
+						)        
 					end
-				end)
-			end
+					task.wait(13)
+				end
+			end)
 		end
-	})
+	end
+})
 
+AuraTab:AddToggle({
+	Name = "Dream Aura [Near Mobs]",
+	Flag = "Dream",
+	Callback = function(v)
+		getgenv().Dream = v
+		if v then
+			task.spawn(function()
+				while getgenv().Dream do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-	AuraTab:AddToggle({
-		Name = "Dream Aura [Near Mobs]",
-		Flag = "Dream",
-		Callback = function(v)
-			getgenv().Dream = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Dream do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "dream_hypnosis_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "dream_hypnosis_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(2.5)
 					end
-				end)
+					task.wait(2.5)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Dream do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "dream_man_hypnosis",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(18)
-						end
+			task.spawn(function()
+				while getgenv().Dream do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "dream_man_hypnosis",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(18)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
+AuraTab:AddToggle({
+	Name = "Blood Aura [Near Mobs]",
+	Flag = "Blood",
+	Callback = function(v)
+		getgenv().Blood = v
+		if v then
+			task.spawn(function()
+				while getgenv().Blood do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-	AuraTab:AddToggle({
-		Name = "Blood Aura [Near Mobs]",
-		Flag = "Blood",
-		Callback = function(v)
-			getgenv().Blood = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Blood do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 25
-								if distance < 40 then
-									local args = {
-										[1] = "blood_burst_blood_shot_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))      
-								end
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "blood_burst_blood_shot_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))      
 							end
 						end
-						task.wait(8)
 					end
-				end)
+					task.wait(8)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Blood do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "blood_burst_blood_shot",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(18)
-						end
+			task.spawn(function()
+				while getgenv().Blood do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "blood_burst_blood_shot",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(18)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
+AuraTab:AddToggle({
+	Name = "Ice Aura [Near Mobs]",
+	Flag = "IceKA",
+	Callback = function(v)
+		getgenv().IceKA = v
+		if v then
+			task.spawn(function()
+				while getgenv().IceKA do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-	AuraTab:AddToggle({
-		Name = "Ice Aura [Near Mobs]",
-		Flag = "IceKA",
-		Callback = function(v)
-			getgenv().IceKA = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().IceKA do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "ice_demon_art_wintry_iciles_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "ice_demon_art_wintry_iciles_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(2)
 					end
-				end)
+					task.wait(2)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().IceKA do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "ice_demon_art_wintry_iciles",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(15)
-						end
+			task.spawn(function()
+				while getgenv().IceKA do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "ice_demon_art_wintry_iciles",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(15)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
+AuraTab:AddToggle({
+	Name = "Shock Aura [Near Mobs]",
+	Flag = "Shock",
+	Callback = function(v)
+		getgenv().Shock = v
+		if v then
+			task.spawn(function()
+				while getgenv().Shock do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-	AuraTab:AddToggle({
-		Name = "Shock Aura [Near Mobs]",
-		Flag = "Shock",
-		Callback = function(v)
-			getgenv().Shock = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Shock do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "Akaza_Air_Type_Damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "Akaza_Air_Type_Damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(4)
 					end
-				end)
+					task.wait(4)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Shock do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "akaza_bda_air_type",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))
-									task.wait(10)
-						end
+			task.spawn(function()
+				while getgenv().Shock do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "akaza_bda_air_type",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))
+						task.wait(10)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
-
-
-	Breathings:AddToggle({
-		Name = "Thunder Aura",
-		Flag = "Thunder",
-		Callback = function(v)
-			getgenv().Thunder = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Thunder do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "Heat_Lightning_Damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
-							end
-						end
-						task.wait(7)
-					end
-				end)
-
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Thunder do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "HeatLightning",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(15)
-						end
-					end
-				end)
-			end
-		end
-	})
-
-		Breathings:AddToggle({
-		Name = "Sound Aura",
-		Flag = "Sound",
-		Callback = function(v)
-			getgenv().Sound = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Sound do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "sound_breathing_bursting_boom_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
-							end
-						end
-						task.wait(8)
-					end
-				end)
-
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Sound do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "sound_breathing_bursting_boom",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(19)
-						end
-					end
-				end)
-			end
-		end
-	})
+	end
+})
 
 Breathings:AddToggle({
-		Name = "Mist Aura",
-		Flag = "Mist",
-		Callback = function(v)
-			getgenv().Mist = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Mist do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
+	Name = "Thunder Aura",
+	Flag = "Thunder",
+	Callback = function(v)
+		getgenv().Thunder = v
+		if v then
+			task.spawn(function()
+				while getgenv().Thunder do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "mist_cloud_haze_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "Heat_Lightning_Damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(7)
 					end
-				end)
+					task.wait(7)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Mist do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "mist_breathing_cloud_and_haze",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(15)
-						end
+			task.spawn(function()
+				while getgenv().Thunder do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "HeatLightning",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(15)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
-	Breathings:AddToggle({
-		Name = "Flame Aura",
-		Flag = "Flame",
-		Callback = function(v)
-			getgenv().Flame = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Flame do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
 
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+Breathings:AddToggle({
+	Name = "Sound Aura",
+	Flag = "Sound",
+	Callback = function(v)
+		getgenv().Sound = v
+		if v then
+			task.spawn(function()
+				while getgenv().Sound do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "flmae_rising_scorch_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "sound_breathing_bursting_boom_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(5)
 					end
-				end)
+					task.wait(8)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Flame do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "flame_breathing_rising_scorching_sun",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(13)
-						end
+			task.spawn(function()
+				while getgenv().Sound do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "sound_breathing_bursting_boom",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(19)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
-	Breathings:AddToggle({
-		Name = "Beast Aura",
-		Flag = "Beast",
-		Callback = function(v)
-			getgenv().Beast = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Beast do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
+Breathings:AddToggle({
+	Name = "Mist Aura",
+	Flag = "Mist",
+	Callback = function(v)
+		getgenv().Mist = v
+		if v then
+			task.spawn(function()
+				while getgenv().Mist do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "beast_breathing_pierce_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "mist_cloud_haze_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(5)
 					end
-				end)
+					task.wait(7)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Beast do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "beast_breathing_pierce",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(13)
-						end
+			task.spawn(function()
+				while getgenv().Mist do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "mist_breathing_cloud_and_haze",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(15)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
-
+	end
+})
 
 
 	Breathings:AddToggle({
@@ -3495,167 +3332,247 @@ Breathings:AddToggle({
 		end
 	})
 
-	Breathings:AddToggle({
-		Name = "Water Aura",
-		Flag = "Water",
-		Callback = function(v)
-			getgenv().Water = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Water do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "water_surface_slash_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+Breathings:AddToggle({
+	Name = "Flame Aura",
+	Flag = "Flame",
+	Callback = function(v)
+		getgenv().Flame = v
+		if v then
+			task.spawn(function()
+				while getgenv().Flame do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
+					
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "flmae_rising_scorch_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(5)
 					end
-				end)
+					task.wait(5)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Water do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "Water_Surface_Slash",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(13)
-						end
+			task.spawn(function()
+				while getgenv().Flame do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "flame_breathing_rising_scorching_sun",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(13)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
 Breathings:AddToggle({
-		Name = "Insect Aura",
-		Flag = "Insect",
-		Callback = function(v)
-			getgenv().Insect = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Insect do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "jaw_breaker_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+	Name = "Beast Aura",
+	Flag = "Beast",
+	Callback = function(v)
+		getgenv().Beast = v
+		if v then
+			task.spawn(function()
+				while getgenv().Beast do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
+					
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "beast_breathing_pierce_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(5)
 					end
-				end)
+					task.wait(5)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Insect do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "Insect_breathing_jaw_breaker",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(16)
-						end
+			task.spawn(function()
+				while getgenv().Beast do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "beast_breathing_pierce",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(13)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
 
-	Breathings:AddToggle({
-		Name = "Wind Aura",
-		Flag = "Wind",
-		Callback = function(v)
-			getgenv().Wind = v
-			if v then
-				-- Luồng tấn công sát thương
-				task.spawn(function()
-					while getgenv().Wind do 
-						local target = getclosestSkills(game:GetService("Workspace").Mobs)
-						
-						if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-							local targetCFrame = nil
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								targetCFrame = target:GetModelCFrame()
-							end
-
-							if targetCFrame then
-								local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-
-								-- Chỉ gây sát thương khi gần hơn 40
-								if distance < 40 then
-									local args = {
-										[1] = "Purifying_wind_damage",
-										[2] = game.Players.LocalPlayer.Character,
-										[3] = targetCFrame
-									}          
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
-								end
+Breathings:AddToggle({
+	Name = "Water Aura",
+	Flag = "Water",
+	Callback = function(v)
+		getgenv().Water = v
+		if v then
+			task.spawn(function()
+				while getgenv().Water do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
+					
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "water_surface_slash_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
 							end
 						end
-						task.wait(5)
 					end
-				end)
+					task.wait(5)
+				end
+			end)
 
-				-- Luồng kích hoạt skill
-				task.spawn(function()
-					while getgenv().Wind do
-						if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-									local args = {
-										[1] = "skil_ting_asd",
-										[2] = game.Players.LocalPlayer,
-										[3] = "wind_breathing_purifying_wind",
-										[4] = 5
-									}
-									game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
-									task.wait(13)
-						end
+			task.spawn(function()
+				while getgenv().Water do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "Water_Surface_Slash",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(13)
 					end
-				end)
-			end
+				end
+			end)
 		end
-	})
+	end
+})
+
+Breathings:AddToggle({
+	Name = "Insect Aura",
+	Flag = "Insect",
+	Callback = function(v)
+		getgenv().Insect = v
+		if v then
+			task.spawn(function()
+				while getgenv().Insect do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
+					
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "jaw_breaker_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
+							end
+						end
+					end
+					task.wait(5)
+				end
+			end)
+
+			task.spawn(function()
+				while getgenv().Insect do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "Insect_breathing_jaw_breaker",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(16)
+					end
+				end
+			end)
+		end
+	end
+})
+
+Breathings:AddToggle({
+	Name = "Wind Aura",
+	Flag = "Wind",
+	Callback = function(v)
+		getgenv().Wind = v
+		if v then
+			task.spawn(function()
+				while getgenv().Wind do 
+					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
+						and findPlayerByName(getgenv().selectedPlayerName) 
+						or getclosestSkills(game:GetService("Workspace").Mobs)
+					
+					if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
+						if targetCFrame then
+							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+							if distance < 40 then
+								local args = {
+									[1] = "Purifying_wind_damage",
+									[2] = game.Players.LocalPlayer.Character,
+									[3] = targetCFrame
+								}          
+								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))                
+							end
+						end
+					end
+					task.wait(5)
+				end
+			end)
+
+			task.spawn(function()
+				while getgenv().Wind do
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
+							[1] = "skil_ting_asd",
+							[2] = game.Players.LocalPlayer,
+							[3] = "wind_breathing_purifying_wind",
+							[4] = 5
+						}
+						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))        
+						task.wait(13)
+					end
+				end
+			end)
+		end
+	end
+})
+
+
 
 
 	--MoveAround--
