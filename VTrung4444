@@ -2793,7 +2793,7 @@ Ect:AddToggle({
 		end
 	end
 
-	AuraTab:AddToggle({
+AuraTab:AddToggle({
 		Name = "Swamp Aura [Near Mobs]",
 		Flag = "Swamp",
 		Callback = function(v)
@@ -2840,8 +2840,9 @@ Ect:AddToggle({
 		end
 	})
 
+
 AuraTab:AddToggle({
-	Name = "Reaper Aura [Near Mobs/Target Player]",
+	Name = "Reaper Aura",
 	Flag = "Reaper",
 	Callback = function(v)
 		getgenv().Reaper = v
