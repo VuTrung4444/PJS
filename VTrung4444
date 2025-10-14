@@ -672,24 +672,247 @@
 	})
 
 
-	MainSection:AddToggle({
-		Name = "Farm",
-		Flag = "FarmSelectedBosses",
-		Callback = function (v)
-			getgenv().Farm = v
-				if antifallActive ~= nil and antifallActive then
-					antifallActive = false
-					DisableAntiFall()
+-- AutoBoss -- (Dùng biến FarmLoopRunning để kiểm soát)
+local FarmLoop = nil
+local FarmLoopRunning = false
+local TweenFa = nil
+local LastCharacter = nil
 
-					local plr = game.Players.LocalPlayer
-					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-						local humanoidRootPart = plr.Character.HumanoidRootPart
-						local humanoid = plr.Character:FindFirstChildOfClass("Humanoid") 
-							humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+-- Hàm huỷ tween hiện tại (nếu có)
+local function ClearTween()
+	if TweenFa then
+		TweenFa:Cancel()
+		TweenFa = nil
+	end
+end
+
+-- Bắt đầu vòng farm
+local function startFarmLoop()
+	if FarmLoopRunning then return end
+	FarmLoopRunning = true
+
+	FarmLoop = task.spawn(function()
+		local player = game.Players.LocalPlayer
+		local character = player.Character or player.CharacterAdded:Wait()
+		LastCharacter = character
+
+		while getgenv().Farm do
+			if not character or not character:FindFirstChild("HumanoidRootPart") then
+				character = player.CharacterAdded:Wait()
+				task.wait(1)
+			end
+
+			UpdateActiveBossLocations()
+			if #ActiveBossLocations == 0 then
+				task.wait(1)
+				continue
+			end
+
+			for _, boss in ipairs(ActiveBossLocations) do
+				if not getgenv().Farm then break end
+
+				local bossCFrame = CFrame.new(boss.Position)
+
+				ClearTween()
+				TweenFa = Tween(bossCFrame)
+
+				repeat
+					task.wait(0.1)
+				until GetDistance(boss.Position) < 20 or not getgenv().Farm
+
+				ClearTween()
+				if not getgenv().Farm then break end
+
+				local bossEntity = getclosest({boss.Name}, game:GetService("Workspace").Mobs)
+				task.wait(1)
+
+				if bossEntity and bossEntity:FindFirstChild("Humanoid") then
+					while getgenv().Farm and bossEntity.Parent and bossEntity.Humanoid.Health > 0 do
+						if not game.Players.LocalPlayer.Character then break end
+						task.wait()
+
+						if bossEntity.PrimaryPart then 
+							local entityCFrame = CFrame.new(bossEntity.PrimaryPart.Position) * FarmModes
+
+							if GetDistance(entityCFrame) >= 25 and GetDistance(entityCFrame) < 150 then
+								game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = entityCFrame
+							else
+								if not TweenFa then
+									TweenFa = Tween(entityCFrame)
+								end
+							end
+						end
 					end
+
+					ClearTween()
+				end
+
+				task.wait(1) -- Delay nhỏ giữa các boss
+			end
+
+			task.wait(2) -- Chờ trước khi làm lại danh sách boss
+		end
+
+		FarmLoopRunning = false
+	end)
+end
+
+-- Theo dõi vòng lặp mỗi heartbeat để khởi động hoặc khôi phục
+game:GetService("RunService").Heartbeat:Connect(function()
+	local player = game.Players.LocalPlayer
+	local currentCharacter = player.Character
+
+	if getgenv().Farm and not FarmLoopRunning then
+		startFarmLoop()
+	elseif not getgenv().Farm and FarmLoopRunning then
+		task.cancel(FarmLoop)
+		FarmLoop = nil
+		FarmLoopRunning = false
+	elseif getgenv().Farm and FarmLoopRunning and currentCharacter ~= LastCharacter then
+		LastCharacter = currentCharacter
+		task.wait(4)
+		getgenv().Farm = false
+		task.cancel(FarmLoop)
+		FarmLoop = nil
+		FarmLoopRunning = false
+		task.wait(2)
+		getgenv().Farm = true
+		startFarmLoop()
+	end
+end)
+
+-- Hàm dừng auto farm
+function StopAutoFarm()
+	getgenv().Farm = false
+
+	if FarmLoop then
+		task.cancel(FarmLoop)
+		FarmLoop = nil
+	end
+
+	FarmLoopRunning = false
+	ClearTween()
+end
+
+-- Giao diện toggle bật/tắt farm
+MainSection:AddToggle({
+	Name = "Farm",
+	Flag = "FarmSelectedBosses",
+	Callback = function(v)
+		getgenv().Farm = v
+
+		if antifallActive ~= nil and antifallActive then
+			antifallActive = false
+			DisableAntiFall()
+
+			local plr = game.Players.LocalPlayer
+			if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+				local humanoid = plr.Character:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				end
 			end
 		end
-	})
+	end
+})
+
+
+
+	--MoveAround--
+	local MoveLoop = nil
+	local MoveLoopRunning = false
+	local isTweening = false
+	local CurrentTween = nil
+	local LastVisitedBoss = nil
+	local VisitedBosses = {}
+	local AllBosses = {}
+	local LastCharacter = nil
+
+local function startMoveLoop()
+	if MoveLoopRunning then return end
+	MoveLoopRunning = true
+
+	MoveLoop = task.spawn(function()
+		local player = game.Players.LocalPlayer
+		local character = player.Character or player.CharacterAdded:Wait()
+
+		while getgenv().MoveAround do
+
+			if not character or not character:FindFirstChild("HumanoidRootPart") then
+				character = player.CharacterAdded:Wait()
+				task.wait(1)
+			end
+
+			UpdateActiveBossLocations()
+			if #ActiveBossLocations == 0 then
+				task.wait(1)
+				continue
+			end
+
+			for _, boss in pairs(ActiveBossLocations) do
+				if not getgenv().MoveAround then break end
+
+				local pos = boss.Position
+				local bossCFrame = CFrame.new(pos)
+
+				if CurrentTween then
+					CurrentTween:Cancel()
+					CurrentTween = nil
+				end
+
+				isTweening = true
+				CurrentTween = Tween(bossCFrame)
+
+				repeat
+					task.wait(0.1)
+				until GetDistance(pos) < 20 or not getgenv().MoveAround
+
+				if CurrentTween then
+					CurrentTween:Cancel()
+					CurrentTween = nil
+				end
+
+				isTweening = false
+
+				task.wait(1) 
+			end
+
+			task.wait(15) 
+		end
+
+		MoveLoopRunning = false
+	end)
+end
+
+
+function StopMoveAround()
+	getgenv().MoveAround = false
+
+	if MoveLoop then
+		task.cancel(MoveLoop)
+		MoveLoop = nil
+	end
+
+	if CurrentTween then
+		CurrentTween:Cancel()
+		CurrentTween = nil
+	end
+
+	MoveLoopRunning = false
+	isTweening = false
+	LastCharacter = nil
+end
+
+
+local player = game.Players.LocalPlayer
+player.CharacterAdded:Connect(function(newChar)
+	task.wait(2)
+	if getgenv().MoveAround then
+		StopMoveAround()
+		task.wait(1)
+		startMoveLoop()
+	end
+end)
 
 	MainSection:AddToggle({
 		Name = "Move Around [Arrow]",
@@ -1420,6 +1643,41 @@ MiscSection:AddToggle({
 	end
 })
 
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local vfx = ReplicatedStorage.Assets.Particles:FindFirstChild("Parts")
+local originalVFXParent = vfx and vfx.Parent
+
+
+MiscSection:AddToggle({
+	Name = "Remove FX",
+	Flag = "RemoveFX",
+	Default = false,
+	Callback = function(state)
+		if vfx then
+			if state then
+				vfx.Parent = nil 
+			else
+				vfx.Parent = originalVFXParent 
+			end
+		end
+	end
+})
+
+
+MiscSection:AddButton({
+	Name = "Delete map, PERF BOOST",
+	Callback = function()
+		if workspace:FindFirstChild("Map") then
+			workspace.Map:Destroy()
+		end
+		if workspace:FindFirstChild("Terrain") and workspace.Terrain:FindFirstChild("Water_Regions") then
+			workspace.Terrain.Water_Regions:Destroy()
+		end
+	end
+})
+
+
 MiscSection:AddToggle({
 	Name = "Auto Buy EXP",
 	Flag = "AutoBuyEXP",
@@ -2028,199 +2286,7 @@ MiscSection:AddToggle({
 		end
 	})
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
 
-local Player = Players.LocalPlayer
-local AutoMoveThread = nil
-
-getgenv().AutoMoveEnabled = false
-
-local function smoothMoveTo(position, speed)
-    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp or not position then return end
-
-    local startPos = hrp.Position
-    local delta = position - startPos
-    local duration = delta.Magnitude / speed
-    local startTime = tick()
-
-    while tick() - startTime < duration and getgenv().AutoMoveEnabled do
-        local t = math.min((tick() - startTime) / duration, 1)
-        local nextPos = startPos + delta * t
-        hrp.Velocity = Vector3.zero
-        hrp.CFrame = CFrame.new(nextPos)
-        RunService.Heartbeat:Wait()
-    end
-
-    if hrp then
-        hrp.Velocity = Vector3.zero
-        hrp.CFrame = CFrame.new(position)
-    end
-end
-
-local function applyFloat(targetPosition)
-    local character = Player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    if not hrp or not humanoid then return end
-
-    if hrp:FindFirstChild("FloatPosition") then hrp.FloatPosition:Destroy() end
-    if hrp:FindFirstChild("BodyGyro") then hrp.BodyGyro:Destroy() end
-
-    local bodyPos = Instance.new("BodyPosition")
-    bodyPos.Name = "FloatPosition"
-    bodyPos.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    bodyPos.Position = targetPosition
-    bodyPos.P = 3000
-    bodyPos.D = 100
-    bodyPos.Parent = hrp
-
-    local gyro = Instance.new("BodyGyro")
-    gyro.Name = "BodyGyro"
-    gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-    gyro.P = 3000
-    gyro.CFrame = hrp.CFrame
-    gyro.Parent = hrp
-
-    humanoid.AutoRotate = false
-    humanoid.WalkSpeed = 0
-    humanoid.JumpPower = 0
-end
-
-local function restoreControl()
-    local character = Player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    if not hrp or not humanoid then return end
-
-    if hrp:FindFirstChild("FloatPosition") then hrp.FloatPosition:Destroy() end
-    if hrp:FindFirstChild("BodyGyro") then hrp.BodyGyro:Destroy() end
-
-    humanoid.AutoRotate = true
-    humanoid.WalkSpeed = 16
-    humanoid.JumpPower = 50
-end
-
-local CachedSpawnPositions = {}
-local LastUpdateTime = 0
-local UpdateInterval = 10
-
-local function getValidMobPositions()
-    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return {} end
-
-    local mobsFolder = Workspace:FindFirstChild("Mobs")
-    if not mobsFolder then return {} end
-
-    local validPositions = {}
-    local mobList = mobsFolder:GetChildren()
-
-
-    local maxMobsToCheck = 15
-    for i = 1, math.min(#mobList, maxMobsToCheck) do
-        local mob = mobList[i]
-        local config = mob:FindFirstChild("Npc_Configuration")
-        local spawnValue = config and config:FindFirstChild("spawnlocaitonasd123")
-        if spawnValue and typeof(spawnValue.Value) == "Vector3" then
-            local pos = spawnValue.Value
-            local dist = (hrp.Position - pos).Magnitude
-            table.insert(validPositions, {pos = pos, distance = dist})
-        end
-    end
-
-    return validPositions
-end
-
-
-local function updateSpawnCache()
-    local positions = getValidMobPositions()
-
-    table.sort(positions, function(a, b)
-        return a.distance > b.distance
-    end)
-
-    CachedSpawnPositions = {}
-    for i = 1, math.min(3, #positions) do
-        local adjustedPos = positions[i].pos - Vector3.new(0, 150, 0)
-        table.insert(CachedSpawnPositions, adjustedPos)
-    end
-
-    LastUpdateTime = tick()
-end
-
-local function getFurthestSpawnLocations()
-    if tick() - LastUpdateTime > UpdateInterval then
-        updateSpawnCache()
-    end
-    return CachedSpawnPositions
-end
-
-local function startAutoMoveLoop()
-    if AutoMoveThread then return end
-
-    AutoMoveThread = task.spawn(function()
-        repeat task.wait() until Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-
-        while getgenv().AutoMoveEnabled do
-            local mobsFolder = Workspace:FindFirstChild("Mobs")
-            if not mobsFolder then
-                warn("[AutoMove] Không tìm thấy thư mục Mobs.")
-                break
-            end
-
-            local mobCount = #mobsFolder:GetChildren()
-
-            if mobCount > 10 then
-                local locations = getFurthestSpawnLocations()
-                for _, pos in ipairs(locations) do
-                    if not getgenv().AutoMoveEnabled then break end
-                    smoothMoveTo(pos, 200)
-                    applyFloat(pos)
-                    task.wait(0.5)
-                end
-                task.wait(20)
-
-            elseif mobCount > 2 then
-                local locations = getFurthestSpawnLocations()
-                for _, pos in ipairs(locations) do
-                    if not getgenv().AutoMoveEnabled then break end
-                    smoothMoveTo(pos, 200)
-                    applyFloat(pos)
-                    task.wait(0.5)
-                end
-                task.wait(40)
-
-            else
-                task.wait(10)
-            end
-        end
-    end)
-end
-
-local function stopAutoMove()
-    getgenv().AutoMoveEnabled = false
-    restoreControl()
-    if AutoMoveThread then
-        task.cancel(AutoMoveThread)
-        AutoMoveThread = nil
-    end
-end
-
--- UI Toggle (Ect là thư viện UI của bạn, ví dụ: Rayfield, Orion, v.v.)
-Ect:AddToggle({
-    Name = "Auto Dungeon",
-    Default = false,
-    Callback = function(state)
-        getgenv().AutoMoveEnabled = state
-        if state then
-            startAutoMoveLoop()
-        else
-            stopAutoMove()
-        end
-    end
-})
 
 	Ect:AddButton({
 		Name = "Reset",
@@ -2684,138 +2750,6 @@ Ect:AddToggle({
 
 	local LastCharacter = game.Players.LocalPlayer.Character
 
-	-- AutoBoss --
-	local FarmLoop = nil
-	local VisitedBosses = {}
-
-	local function startFarmLoop()
-		if FarmLoop then return end -- Tránh chạy nhiều vòng lặp song song
-		
-		FarmLoop = task.spawn(function()
-			local player = game.Players.LocalPlayer
-			local character = player.Character or player.CharacterAdded:Wait() -- Lấy nhân vật hiện tại
-			local rootPart = character:FindFirstChild("HumanoidRootPart")
-			local lastCharacter = character -- Lưu lại nhân vật cũ để kiểm tra thay đổi
-
-			-- Hủy tween cũ nếu có
-			if TweenFa then
-				TweenFa:Cancel()
-				TweenFa = nil
-			end
-
-			while getgenv().Farm do
-				-- Cập nhật danh sách boss còn lại
-				UpdateActiveBossLocations()
-
-				if #ActiveBossLocations == 0 then
-					task.wait(1)
-					continue
-				end
-
-				-- Tìm boss chưa thăm gần nhất
-				local candidateBosses = {}
-				for _, boss in pairs(ActiveBossLocations) do
-					if not VisitedBosses[boss.Name] then
-						table.insert(candidateBosses, boss)
-					end
-				end
-
-				if #candidateBosses == 0 then
-					VisitedBosses = {} -- Reset khi đã thăm hết
-					candidateBosses = ActiveBossLocations
-				end
-
-				-- Sắp xếp boss theo khoảng cách
-				table.sort(candidateBosses, function(a, b)
-					return GetDistance(a.Position) < GetDistance(b.Position)
-				end)
-
-				local boss = candidateBosses[1]
-				if not boss then
-					task.wait(1)
-					continue
-				end
-
-				local bossCFrame = CFrame.new(boss.Position)
-				local TweenFa = Tween(bossCFrame)
-
-				-- Di chuyển đến boss
-				repeat
-					task.wait()
-					if not game.Players.LocalPlayer.Character then
-						if TweenFa then
-							TweenFa:Cancel()
-							TweenFa = nil
-						end
-						break
-					end
-				until not getgenv().Farm or GetDistance(bossCFrame) < 20
-
-				if not getgenv().Farm then break end
-				if TweenFa then
-					TweenFa:Cancel()
-					TweenFa = nil
-				end
-
-				-- Kiểm tra boss còn sống không
-				local bossEntity = getclosest({boss.Name}, game:GetService("Workspace").Mobs)
-				task.wait(1)
-
-				if bossEntity and bossEntity:FindFirstChild("Humanoid") then
-					while getgenv().Farm and bossEntity.Parent and bossEntity.Humanoid.Health > 0 do
-						if not game.Players.LocalPlayer.Character then
-							break
-						end
-						task.wait()
-
-						if bossEntity.PrimaryPart then -- Kiểm tra tránh nil trước khi dùng
-							local entityCFrame = CFrame.new(bossEntity.PrimaryPart.Position) * FarmModes
-							
-							if GetDistance(entityCFrame) >= 25 and GetDistance(entityCFrame) < 150 then
-								game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = entityCFrame
-							else
-								if not TweenFa then
-									TweenFa = Tween(entityCFrame)
-								end
-							end
-						end
-					end
-				end
-
-				VisitedBosses[boss.Name] = true
-				UpdateActiveBossLocations()
-			end
-		end)
-	end
-
-	game:GetService("RunService").Heartbeat:Connect(function()
-		local player = game.Players.LocalPlayer
-		local currentCharacter = player.Character
-
-		if getgenv().Farm and not FarmLoop then
-			startFarmLoop()
-		elseif not getgenv().Farm and FarmLoop then
-			task.cancel(FarmLoop)
-			FarmLoop = nil
-		elseif getgenv().Farm and FarmLoop and currentCharacter ~= LastCharacter then
-			LastCharacter = currentCharacter -- Cập nhật nhân vật mới
-			task.wait(4) -- Chờ 4 giây sau khi hồi sinh
-			getgenv().Farm = false
-			task.cancel(FarmLoop)
-			FarmLoop = nil
-			task.wait(2) -- Chờ một chút để đảm bảo toggle tắt
-			getgenv().Farm = true
-			startFarmLoop()
-		end
-	end)
-
-	function StopAutoFarm()
-		getgenv().Farm = false
-		if FarmLoop then
-			task.cancel(FarmLoop)
-			FarmLoop = nil
-		end
-	end
 
 AuraTab:AddToggle({
 		Name = "Swamp Aura [Near Mobs]",
@@ -3600,148 +3534,7 @@ Breathings:AddToggle({
 
 
 
-	--MoveAround--
 
-	local MoveLoop = nil
-	local MoveLoopRunning = false
-	local isTweening = false
-	local CurrentTween = nil
-	local LastVisitedBoss = nil
-	local VisitedBosses = {}
-	local AllBosses = {}
-	local LastCharacter = nil
-
-	local function startMoveLoop()
-		if MoveLoopRunning then return end
-		MoveLoopRunning = true
-
-		MoveLoop = task.spawn(function()
-			local player = game.Players.LocalPlayer
-			local character = player.Character or player.CharacterAdded:Wait()
-			LastCharacter = character
-
-			while getgenv().MoveAround do
-				if not character or not character:FindFirstChild("HumanoidRootPart") then
-					character = player.CharacterAdded:Wait()
-					task.wait(1)
-				end
-
-				UpdateActiveBossLocations()
-				if #ActiveBossLocations == 0 then
-					continue
-				end
-
-				if isTweening then
-					print("[MoveLoop] Đang tween, đợi xong rồi mới đi tiếp.")
-					task.wait(1)
-					continue
-				end
-
-				if #AllBosses == 0 then
-					for _, boss in pairs(ActiveBossLocations) do
-						table.insert(AllBosses, boss)
-					end
-				end
-
-				local candidateBosses = {}
-				for _, boss in pairs(ActiveBossLocations) do
-					if not VisitedBosses[boss.Name] then
-						table.insert(candidateBosses, boss)
-					end
-				end
-
-				if #candidateBosses == 0 then
-					VisitedBosses = {}
-					candidateBosses = ActiveBossLocations
-				end
-
-				table.sort(candidateBosses, function(a, b)
-					return GetDistance(a.Position) < GetDistance(b.Position)
-				end)
-
-				local boss = candidateBosses[1]
-				if not boss then
-					task.wait(1)
-					continue
-				end
-
-				isTweening = true
-
-				if CurrentTween then
-					CurrentTween:Cancel()
-					CurrentTween = nil
-				end
-
-				local bossCFrame = CFrame.new(boss.Position)
-				CurrentTween = Tween(bossCFrame)
-
-				repeat
-					task.wait(0.1)
-				until GetDistance(boss.Position) < 20 or not getgenv().MoveAround
-
-				if CurrentTween then
-					CurrentTween:Cancel()
-					CurrentTween = nil
-				end
-
-				VisitedBosses[boss.Name] = true
-				LastVisitedBoss = boss
-
-				task.wait(1)
-				isTweening = false
-			end
-
-			MoveLoopRunning = false
-		end)
-	end
-
-	game:GetService("RunService").Heartbeat:Connect(function()
-		local player = game.Players.LocalPlayer
-		local character = player.Character
-
-		if getgenv().MoveAround and not MoveLoopRunning then
-			startMoveLoop()
-		elseif not getgenv().MoveAround and MoveLoop then
-			task.cancel(MoveLoop)
-			MoveLoop = nil
-			MoveLoopRunning = false
-		elseif getgenv().MoveAround and character ~= LastCharacter then
-			LastCharacter = character
-			task.wait(4)
-			if MoveLoop then
-				task.cancel(MoveLoop)
-				MoveLoop = nil
-				MoveLoopRunning = false
-			end
-			task.wait(2)
-			if getgenv().MoveAround then
-				startMoveLoop()
-			end
-		end
-	end)
-
-	function StopMoveAround()
-		getgenv().MoveAround = false
-
-		-- Hủy vòng lặp nếu đang chạy
-		if MoveLoop then
-			task.cancel(MoveLoop)
-			MoveLoop = nil
-		end
-
-		-- Hủy tween nếu đang tween
-		if CurrentTween then
-			CurrentTween:Cancel()
-			CurrentTween = nil
-		end
-
-		-- Reset lại toàn bộ biến
-		MoveLoopRunning = false
-		isTweening = false
-		LastVisitedBoss = nil
-		VisitedBosses = {}
-		AllBosses = {}
-	end
 
 
 	--// Update Labels / Dropdowns \\--
@@ -4074,3 +3867,198 @@ if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
 		end
 	})
 end
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local Player = Players.LocalPlayer
+local AutoMoveThread = nil
+
+getgenv().AutoMoveEnabled = false
+
+local function smoothMoveTo(position, speed)
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp or not position then return end
+
+    local startPos = hrp.Position
+    local delta = position - startPos
+    local duration = delta.Magnitude / speed
+    local startTime = tick()
+
+    while tick() - startTime < duration and getgenv().AutoMoveEnabled do
+        local t = math.min((tick() - startTime) / duration, 1)
+        local nextPos = startPos + delta * t
+        hrp.Velocity = Vector3.zero
+        hrp.CFrame = CFrame.new(nextPos)
+        RunService.Heartbeat:Wait()
+    end
+
+    if hrp then
+        hrp.Velocity = Vector3.zero
+        hrp.CFrame = CFrame.new(position)
+    end
+end
+
+local function applyFloat(targetPosition)
+    local character = Player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid then return end
+
+    if hrp:FindFirstChild("FloatPosition") then hrp.FloatPosition:Destroy() end
+    if hrp:FindFirstChild("BodyGyro") then hrp.BodyGyro:Destroy() end
+
+    local bodyPos = Instance.new("BodyPosition")
+    bodyPos.Name = "FloatPosition"
+    bodyPos.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyPos.Position = targetPosition
+    bodyPos.P = 3000
+    bodyPos.D = 100
+    bodyPos.Parent = hrp
+
+    local gyro = Instance.new("BodyGyro")
+    gyro.Name = "BodyGyro"
+    gyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    gyro.P = 3000
+    gyro.CFrame = hrp.CFrame
+    gyro.Parent = hrp
+
+    humanoid.AutoRotate = false
+    humanoid.WalkSpeed = 0
+    humanoid.JumpPower = 0
+end
+
+local function restoreControl()
+    local character = Player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid then return end
+
+    if hrp:FindFirstChild("FloatPosition") then hrp.FloatPosition:Destroy() end
+    if hrp:FindFirstChild("BodyGyro") then hrp.BodyGyro:Destroy() end
+
+    humanoid.AutoRotate = true
+    humanoid.WalkSpeed = 16
+    humanoid.JumpPower = 50
+end
+
+local CachedSpawnPositions = {}
+local LastUpdateTime = 0
+local UpdateInterval = 10
+
+local function getValidMobPositions()
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return {} end
+
+    local mobsFolder = Workspace:FindFirstChild("Mobs")
+    if not mobsFolder then return {} end
+
+    local validPositions = {}
+    local mobList = mobsFolder:GetChildren()
+
+
+    local maxMobsToCheck = 15
+    for i = 1, math.min(#mobList, maxMobsToCheck) do
+        local mob = mobList[i]
+        local config = mob:FindFirstChild("Npc_Configuration")
+        local spawnValue = config and config:FindFirstChild("spawnlocaitonasd123")
+        if spawnValue and typeof(spawnValue.Value) == "Vector3" then
+            local pos = spawnValue.Value
+            local dist = (hrp.Position - pos).Magnitude
+            table.insert(validPositions, {pos = pos, distance = dist})
+        end
+    end
+
+    return validPositions
+end
+
+
+local function updateSpawnCache()
+    local positions = getValidMobPositions()
+
+    table.sort(positions, function(a, b)
+        return a.distance > b.distance
+    end)
+
+    CachedSpawnPositions = {}
+    for i = 1, math.min(3, #positions) do
+        local adjustedPos = positions[i].pos - Vector3.new(0, 150, 0)
+        table.insert(CachedSpawnPositions, adjustedPos)
+    end
+
+    LastUpdateTime = tick()
+end
+
+local function getFurthestSpawnLocations()
+    if tick() - LastUpdateTime > UpdateInterval then
+        updateSpawnCache()
+    end
+    return CachedSpawnPositions
+end
+
+local function startAutoMoveLoop()
+    if AutoMoveThread then return end
+
+    AutoMoveThread = task.spawn(function()
+        repeat task.wait() until Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+
+        while getgenv().AutoMoveEnabled do
+            local mobsFolder = Workspace:FindFirstChild("Mobs")
+            if not mobsFolder then
+                warn("[AutoMove] Không tìm thấy thư mục Mobs.")
+                break
+            end
+
+            local mobCount = #mobsFolder:GetChildren()
+
+            if mobCount > 10 then
+                local locations = getFurthestSpawnLocations()
+                for _, pos in ipairs(locations) do
+                    if not getgenv().AutoMoveEnabled then break end
+                    smoothMoveTo(pos, 200)
+                    applyFloat(pos)
+                    task.wait(0.5)
+                end
+                task.wait(20)
+
+            elseif mobCount > 2 then
+                local locations = getFurthestSpawnLocations()
+                for _, pos in ipairs(locations) do
+                    if not getgenv().AutoMoveEnabled then break end
+                    smoothMoveTo(pos, 200)
+                    applyFloat(pos)
+                    task.wait(0.5)
+                end
+                task.wait(40)
+
+            else
+                task.wait(10)
+            end
+        end
+    end)
+end
+
+local function stopAutoMove()
+    getgenv().AutoMoveEnabled = false
+    restoreControl()
+    if AutoMoveThread then
+        task.cancel(AutoMoveThread)
+        AutoMoveThread = nil
+    end
+end
+
+
+Ect:AddToggle({
+    Name = "Auto Dungeon",
+    Default = false,
+    Callback = function(state)
+        getgenv().AutoMoveEnabled = state
+        if state then
+            startAutoMoveLoop()
+        else
+            stopAutoMove()
+        end
+    end
+})
