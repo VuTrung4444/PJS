@@ -2006,32 +2006,6 @@ MiscSection:AddToggle({
 		end
 	})
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-
-getgenv().ShowHackValue = false
-
-
-spawn(function()
-	while task.wait(2) do
-		if getgenv().ShowHackValue then
-			local val = LocalPlayer:FindFirstChild("hacktanbgasd12312312")
-			if val and val:IsA("IntValue") then
-				print("Giá trị hacktanbgasd12312312:", val.Value)
-			end
-		end
-	end
-end)
-
-
-MiscSection:AddToggle({
-	Name = "Kiểm soát anticheat [8 = kick]",
-	Default = false,
-	Callback = function(state)
-		getgenv().ShowHackValue = state
-	end
-})
 
 
 
@@ -2704,7 +2678,7 @@ MiscSection:AddToggle({
 					EnableAntiFall()
 				end
 			else
-				if antifallActive then  -- Check if no clip is active
+				if antifallActive then
 					antifallActive = false
 					DisableAntiFall()
 				end
@@ -2729,26 +2703,32 @@ MiscSection:AddToggle({
 
 
 	--// Player Stats \\--
-	local plr = game.Players.LocalPlayer
-	local function updateLabels()
-		local playerData = game:GetService("ReplicatedStorage").Player_Data[plr.Name]
-		if playerData then
-			local statText = ""
-			statText = statText .. "Clan: " .. tostring(playerData.Clan.Value) .. "\n"
-			statText = statText .. "Race: " .. raceTable[playerData.Race.Value] .. "\n"
-			statText = statText .. "Demon Art Spins: " .. tostring(playerData.Demon_art_Spins.Value) .. "\n"
-			statText = statText .. "Clan Spins: " .. tostring(playerData.Spins.Value) .. "\n"
-			statText = statText .. "Yen: " .. tostring(playerData.Yen.Value) .. "\n"
-			local demonProgressText = string.format("Demon Progress: %d/%d", playerData.DemonProgress[1].Value, playerData.DemonProgress[2].Value)
-			statText = statText .. demonProgressText .. "\n"
-			local breathingProgressText = string.format("Breathing Progress: %d/%d", playerData.BreathingProgress[1].Value, playerData.BreathingProgress[2].Value)
-			statText = statText .. breathingProgressText
+local plr = game.Players.LocalPlayer
+local function updateLabels()
+    local playerData = game:GetService("ReplicatedStorage").Player_Data[plr.Name]
+    if playerData then
+        local statText = ""
+        statText = statText .. "Clan: " .. tostring(playerData.Clan.Value) .. "\n"
+        statText = statText .. "Race: " .. raceTable[playerData.Race.Value] .. "\n"
+        statText = statText .. "Demon Art Spins: " .. tostring(playerData.Demon_art_Spins.Value) .. "\n"
+        statText = statText .. "Clan Spins: " .. tostring(playerData.Spins.Value) .. "\n"
+        statText = statText .. "Yen: " .. tostring(playerData.Yen.Value) .. "\n"
+        local demonProgressText = string.format("Demon Progress: %d/%d", playerData.DemonProgress[1].Value, playerData.DemonProgress[2].Value)
+        statText = statText .. demonProgressText .. "\n"
+        local breathingProgressText = string.format("Breathing Progress: %d/%d", playerData.BreathingProgress[1].Value, playerData.BreathingProgress[2].Value)
+        statText = statText .. breathingProgressText .. "\n"
 
-			infoLabel:Set(statText)
-		end
-	end
+        local hackVal = plr:FindFirstChild("hacktanbgasd12312312")
+        if hackVal and hackVal:IsA("IntValue") then
+            statText = statText .. "Biến kiểm soát [8 = kick]: " .. tostring(hackVal.Value) .. "\n"
+        end
 
-	local LastCharacter = game.Players.LocalPlayer.Character
+        infoLabel:Set(statText)
+    end
+end
+
+local LastCharacter = game.Players.LocalPlayer.Character
+
 
 
 AuraTab:AddToggle({
