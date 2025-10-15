@@ -2247,8 +2247,7 @@ local Workspace = game:GetService("Workspace")
 
 local Player = Players.LocalPlayer
 local AutoMoveThread = nil
-
-getgenv().AutoMoveEnabled = false
+local getgenv().AutoMoveEnabled = false
 
 local function smoothMoveTo(position, speed)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
@@ -2379,7 +2378,6 @@ local function startAutoMoveLoop()
         while getgenv().AutoMoveEnabled do
             local mobsFolder = Workspace:FindFirstChild("Mobs")
             if not mobsFolder then
-                warn("[AutoMove] Không tìm thấy thư mục Mobs.")
                 break
             end
 
@@ -2403,7 +2401,7 @@ local function startAutoMoveLoop()
                     applyFloat(pos)
                     task.wait(0.5)
                 end
-                task.wait(40)
+                task.wait(30)
 
             else
                 task.wait(10)
