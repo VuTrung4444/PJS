@@ -1627,10 +1627,10 @@ MiscSection:AddButton({
 })
 
 MiscSection:AddButton({
-    Name = "Delete map test",
+    Name = "Delete map",
     Callback = function()
         if workspace:FindFirstChild("Map") then
-            -- Duyệt qua tất cả các con trong Map và xoá từng phần tử
+
             for _, child in pairs(workspace.Map:GetChildren()) do
                 child:Destroy()
             end
@@ -1639,19 +1639,6 @@ MiscSection:AddButton({
             workspace.Terrain.Water_Regions:Destroy()
         end
     end
-})
-
-
-MiscSection:AddButton({
-	Name = "Delete map, PERF BOOST",
-	Callback = function()
-		if workspace:FindFirstChild("Map") then
-			workspace.Map:Destroy()
-		end
-		if workspace:FindFirstChild("Terrain") and workspace.Terrain:FindFirstChild("Water_Regions") then
-			workspace.Terrain.Water_Regions:Destroy()
-		end
-	end
 })
 
 
