@@ -2247,7 +2247,8 @@ local Workspace = game:GetService("Workspace")
 
 local Player = Players.LocalPlayer
 local AutoMoveThread = nil
-local getgenv().AutoMoveEnabled = false
+
+getgenv().AutoMoveEnabled = false
 
 local function smoothMoveTo(position, speed)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
