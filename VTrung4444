@@ -676,9 +676,7 @@
 local FarmLoop = nil
 local FarmLoopRunning = false
 local TweenFa = nil
-local LastCharacter = nil
 
--- Hàm huỷ tween hiện tại (nếu có)
 local function ClearTween()
 	if TweenFa then
 		TweenFa:Cancel()
@@ -686,7 +684,7 @@ local function ClearTween()
 	end
 end
 
--- Bắt đầu vòng farm
+
 local function startFarmLoop()
 	if FarmLoopRunning then return end
 	FarmLoopRunning = true
@@ -694,7 +692,7 @@ local function startFarmLoop()
 	FarmLoop = task.spawn(function()
 		local player = game.Players.LocalPlayer
 		local character = player.Character or player.CharacterAdded:Wait()
-		LastCharacter = character
+
 
 		while getgenv().Farm do
 			if not character or not character:FindFirstChild("HumanoidRootPart") then
@@ -747,41 +745,16 @@ local function startFarmLoop()
 					ClearTween()
 				end
 
-				task.wait(1) -- Delay nhỏ giữa các boss
+				task.wait(1) 
 			end
 
-			task.wait(2) -- Chờ trước khi làm lại danh sách boss
+			task.wait(2) 
 		end
 
 		FarmLoopRunning = false
 	end)
 end
 
--- Theo dõi vòng lặp mỗi heartbeat để khởi động hoặc khôi phục
-game:GetService("RunService").Heartbeat:Connect(function()
-	local player = game.Players.LocalPlayer
-	local currentCharacter = player.Character
-
-	if getgenv().Farm and not FarmLoopRunning then
-		startFarmLoop()
-	elseif not getgenv().Farm and FarmLoopRunning then
-		task.cancel(FarmLoop)
-		FarmLoop = nil
-		FarmLoopRunning = false
-	elseif getgenv().Farm and FarmLoopRunning and currentCharacter ~= LastCharacter then
-		LastCharacter = currentCharacter
-		task.wait(4)
-		getgenv().Farm = false
-		task.cancel(FarmLoop)
-		FarmLoop = nil
-		FarmLoopRunning = false
-		task.wait(2)
-		getgenv().Farm = true
-		startFarmLoop()
-	end
-end)
-
--- Hàm dừng auto farm
 function StopAutoFarm()
 	getgenv().Farm = false
 
@@ -794,7 +767,17 @@ function StopAutoFarm()
 	ClearTween()
 end
 
--- Giao diện toggle bật/tắt farm
+local player = game.Players.LocalPlayer
+player.CharacterAdded:Connect(function(newChar)
+	task.wait(2)
+	if getgenv().Farm then
+		StopAutoFarm()
+		task.wait(1)
+		getgenv().Farm = true
+		startFarmLoop()
+	end
+end)
+
 MainSection:AddToggle({
 	Name = "Farm",
 	Flag = "FarmSelectedBosses",
@@ -826,21 +809,23 @@ MainSection:AddToggle({
 	local LastVisitedBoss = nil
 	local VisitedBosses = {}
 	local AllBosses = {}
-	local LastCharacter = nil
 
 local function startMoveLoop()
 	if MoveLoopRunning then return end
 	MoveLoopRunning = true
 
+
 	MoveLoop = task.spawn(function()
 		local player = game.Players.LocalPlayer
 		local character = player.Character or player.CharacterAdded:Wait()
+
 
 		while getgenv().MoveAround do
 
 			if not character or not character:FindFirstChild("HumanoidRootPart") then
 				character = player.CharacterAdded:Wait()
 				task.wait(1)
+
 			end
 
 			UpdateActiveBossLocations()
@@ -900,7 +885,6 @@ function StopMoveAround()
 
 	MoveLoopRunning = false
 	isTweening = false
-	LastCharacter = nil
 end
 
 
@@ -910,6 +894,7 @@ player.CharacterAdded:Connect(function(newChar)
 	if getgenv().MoveAround then
 		StopMoveAround()
 		task.wait(1)
+		getgenv().MoveAround = true
 		startMoveLoop()
 	end
 end)
@@ -1239,20 +1224,19 @@ MainSection:AddToggle({
 			Flag = "KillAuraWeapon_" .. weapon,
 			Callback = function(state)
 				if state then
-					-- Tắt toggle trước đó nếu có và khác với toggle hiện tại
+
 					if activeToggle and activeToggle ~= toggle then
 						activeToggle:SetState(false)
 					end
-					-- Cập nhật toggle hiện tại và thiết lập Method
+
 					activeToggle = toggle
 					Method = weapon
-					print("Weapon Selected: " .. weapon)
 				else
-					-- Chỉ clear nếu chính toggle hiện tại bị tắt
+
 					if activeToggle == toggle then
 						activeToggle = nil
 						Method = nil
-						print("Weapon Deselected")
+
 					end
 				end
 			end
