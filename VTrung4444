@@ -1615,25 +1615,22 @@ MiscSection:AddButton({
 	Name = "No Fog",
 	Flag = "NF",
 	Keybind = false,
-	Callback = function(v)
+	Callback = function()
 		local Lighting = game:GetService("Lighting")
-
-		if v == true then
 			for _, light in ipairs(Lighting:GetChildren()) do
 				if light:IsA("Atmosphere") or string.find(light.Name, "Blur") or string.find(light.Name, "Bloom") then
 					light:Destroy()
 				end
-			end
 			Lighting.FogEnd = 1000000
 		end
 	end
 })
 
 MiscSection:AddButton({
-    Name = "Delete map",
+    Name = "Delete map test",
     Callback = function()
         if workspace:FindFirstChild("Map") then
-
+            -- Duyệt qua tất cả các con trong Map và xoá từng phần tử
             for _, child in pairs(workspace.Map:GetChildren()) do
                 child:Destroy()
             end
@@ -1643,6 +1640,20 @@ MiscSection:AddButton({
         end
     end
 })
+
+
+MiscSection:AddButton({
+	Name = "Delete map, PERF BOOST",
+	Callback = function()
+		if workspace:FindFirstChild("Map") then
+			workspace.Map:Destroy()
+		end
+		if workspace:FindFirstChild("Terrain") and workspace.Terrain:FindFirstChild("Water_Regions") then
+			workspace.Terrain.Water_Regions:Destroy()
+		end
+	end
+})
+
 
 MiscSection:AddToggle({
 	Name = "Auto Buy EXP",
