@@ -3583,7 +3583,7 @@ AuraTab:AddToggle({
 							5
 						)
 					end
-					task.wait(10)
+					task.wait(13)
 				end
 			end)
 		end
