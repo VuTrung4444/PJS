@@ -3479,6 +3479,14 @@ AuraTab:AddToggle({
 	end
 })
 
+
+
+
+-- Đặt tamariLoop ở ngoài để giữ tham chiếu khi Toggle được gọi lại
+if not getgenv().tamariLoop then
+	getgenv().tamariLoop = nil
+end
+
 AuraTab:AddToggle({
 	Name = "Tamari Aura",
 	Flag = "Tamari",
@@ -3488,24 +3496,20 @@ AuraTab:AddToggle({
 		local plr = game.Players.LocalPlayer
 		local ReplicatedStorage = game:GetService("ReplicatedStorage")
 		local Workspace = game:GetService("Workspace")
-		local tamariLoop = nil
-
 
 		local function resetTamari()
-			if tamariLoop then
-				task.cancel(tamariLoop)
-				tamariLoop = nil
+			if getgenv().tamariLoop then
+				task.cancel(getgenv().tamariLoop)
+				getgenv().tamariLoop = nil
 			end
 		end
 
-
 		local function startTamariLoop()
 			resetTamari()
-			tamariLoop = task.spawn(function()
+			getgenv().tamariLoop = task.spawn(function()
 				while getgenv().Tamari do
 					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
 						local target = nil
-
 
 						if getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "" then
 							local selected = game.Players:FindFirstChild(getgenv().selectedPlayerName)
@@ -3514,17 +3518,14 @@ AuraTab:AddToggle({
 							end
 						end
 
-
 						if not target then
 							target = getclosestSkills(Workspace.Mobs)
 						end
-
 
 						while not target and getgenv().Tamari do
 							task.wait(0.5)
 							target = getclosestSkills(Workspace.Mobs)
 						end
-
 
 						local modelCFrame = nil
 						if target then
@@ -3535,7 +3536,6 @@ AuraTab:AddToggle({
 							end
 						end
 
-
 						while not modelCFrame and getgenv().Tamari do
 							task.wait(0.1)
 							if target and target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
@@ -3543,15 +3543,12 @@ AuraTab:AddToggle({
 							elseif target and target:FindFirstChild("HumanoidRootPart") then
 								modelCFrame = target.HumanoidRootPart.CFrame
 							end
-							if not target then
-								break
-							end
+							if not target then break end
 						end
-
 
 						local humanoid = target and target:FindFirstChildOfClass("Humanoid")
 						if modelCFrame and humanoid and humanoid.Health > 0 then
-							ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("To_Server"):WaitForChild("Handle_Initiate_S"):FireServer(
+							ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
 								"Tamari_Normal_Throw_Damage_new",
 								plr.Character,
 								modelCFrame,
@@ -3565,11 +3562,11 @@ AuraTab:AddToggle({
 			end)
 		end
 
-		-- Luồng theo dõi trạng thái Tamari
+		-- Vòng lặp chính chỉ được gọi một lần duy nhất
 		task.spawn(function()
 			while task.wait() do
 				if getgenv().Tamari then
-					if not tamariLoop then
+					if not getgenv().tamariLoop then
 						startTamariLoop()
 					end
 				else
@@ -3578,18 +3575,17 @@ AuraTab:AddToggle({
 			end
 		end)
 
-
+		-- Luồng phụ kích hoạt skill
 		if v then
 			task.spawn(function()
 				while getgenv().Tamari do
-					if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-						local args = {
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
 							"skil_ting_asd",
 							plr,
 							"Tamari2_Normal_Throw",
 							5
-						}
-						ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))
+						)
 					end
 					task.wait(13)
 				end
@@ -3597,7 +3593,6 @@ AuraTab:AddToggle({
 		end
 	end
 })
-
 
 
 AuraTab:AddToggle({
