@@ -3480,9 +3480,6 @@ AuraTab:AddToggle({
 })
 
 
-
-
--- Đặt tamariLoop ở ngoài để giữ tham chiếu khi Toggle được gọi lại
 if not getgenv().tamariLoop then
 	getgenv().tamariLoop = nil
 end
@@ -3537,7 +3534,7 @@ AuraTab:AddToggle({
 						end
 
 						while not modelCFrame and getgenv().Tamari do
-							task.wait(0.1)
+							task.wait(0.5)
 							if target and target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
 								modelCFrame = target:GetModelCFrame()
 							elseif target and target:FindFirstChild("HumanoidRootPart") then
@@ -3554,7 +3551,7 @@ AuraTab:AddToggle({
 								modelCFrame,
 								target
 							)
-							task.wait(4)
+							task.wait(3)
 						end
 					end
 				end
@@ -3562,7 +3559,6 @@ AuraTab:AddToggle({
 			end)
 		end
 
-		-- Vòng lặp chính chỉ được gọi một lần duy nhất
 		task.spawn(function()
 			while task.wait() do
 				if getgenv().Tamari then
@@ -3587,7 +3583,7 @@ AuraTab:AddToggle({
 							5
 						)
 					end
-					task.wait(13)
+					task.wait(10)
 				end
 			end)
 		end
