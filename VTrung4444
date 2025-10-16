@@ -3484,40 +3484,112 @@ AuraTab:AddToggle({
 	Flag = "Tamari",
 	Callback = function(v)
 		getgenv().Tamari = v
-		if v then
-			task.spawn(function()
-				while getgenv().Tamari do 
-					local target = (getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "") 
-						and findPlayerByName(getgenv().selectedPlayerName) 
-						or getclosestSkills(game:GetService("Workspace").Mobs)
 
-					if target and target.Parent and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-						local targetCFrame = target.GetModelCFrame and target:GetModelCFrame()
-						if targetCFrame then
-							local distance = (targetCFrame.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-							if distance < 40 then
-								game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
-									"Tamari_Normal_Throw",
-									game.Players.LocalPlayer.Character,
-									targetCFrame
-								)
-								task.wait(6)
-							end
-						end
-					end
-					task.wait(0.2)
-				end
-			end)
+		local plr = game.Players.LocalPlayer
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local Workspace = game:GetService("Workspace")
+		local tamariLoop = nil
 
-			task.spawn(function()
+
+		local function resetTamari()
+			if tamariLoop then
+				task.cancel(tamariLoop)
+				tamariLoop = nil
+			end
+		end
+
+
+		local function startTamariLoop()
+			resetTamari()
+			tamariLoop = task.spawn(function()
 				while getgenv().Tamari do
 					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
+						local target = nil
+
+
+						if getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "" then
+							local selected = game.Players:FindFirstChild(getgenv().selectedPlayerName)
+							if selected and selected.Character then
+								target = selected.Character
+							end
+						end
+
+
+						if not target then
+							target = getclosestSkills(Workspace.Mobs)
+						end
+
+
+						while not target and getgenv().Tamari do
+							task.wait(0.5)
+							target = getclosestSkills(Workspace.Mobs)
+						end
+
+
+						local modelCFrame = nil
+						if target then
+							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
+								modelCFrame = target:GetModelCFrame()
+							elseif target:FindFirstChild("HumanoidRootPart") then
+								modelCFrame = target.HumanoidRootPart.CFrame
+							end
+						end
+
+
+						while not modelCFrame and getgenv().Tamari do
+							task.wait(0.1)
+							if target and target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
+								modelCFrame = target:GetModelCFrame()
+							elseif target and target:FindFirstChild("HumanoidRootPart") then
+								modelCFrame = target.HumanoidRootPart.CFrame
+							end
+							if not target then
+								break
+							end
+						end
+
+
+						local humanoid = target and target:FindFirstChildOfClass("Humanoid")
+						if modelCFrame and humanoid and humanoid.Health > 0 then
+							ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("To_Server"):WaitForChild("Handle_Initiate_S"):FireServer(
+								"Tamari_Normal_Throw_Damage_new",
+								plr.Character,
+								modelCFrame,
+								target
+							)
+							task.wait(4)
+						end
+					end
+				end
+				resetTamari()
+			end)
+		end
+
+		-- Luồng theo dõi trạng thái Tamari
+		task.spawn(function()
+			while task.wait() do
+				if getgenv().Tamari then
+					if not tamariLoop then
+						startTamariLoop()
+					end
+				else
+					resetTamari()
+				end
+			end
+		end)
+
+
+		if v then
+			task.spawn(function()
+				while getgenv().Tamari do
+					if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local args = {
 							"skil_ting_asd",
-							game.Players.LocalPlayer,
+							plr,
 							"Tamari2_Normal_Throw",
 							5
-						)        
+						}
+						ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))
 					end
 					task.wait(13)
 				end
@@ -3525,6 +3597,8 @@ AuraTab:AddToggle({
 		end
 	end
 })
+
+
 
 AuraTab:AddToggle({
 	Name = "Dream Aura [Near Mobs]",
@@ -4487,4 +4561,3 @@ if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
 		end
 	})
 end
-
