@@ -3579,7 +3579,7 @@ AuraTab:AddToggle({
 					end
 
 
-					task.wait(0.5)
+					task.wait(1)
 
 					if not (currentTarget and currentTarget.Parent) then
 						task.wait(0.1)
@@ -3613,7 +3613,7 @@ AuraTab:AddToggle({
 					end
 
 
-					task.wait(3)
+					task.wait(2)
 
 
 					if not (currentTarget and currentTarget.Parent) then
