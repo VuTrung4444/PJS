@@ -3480,7 +3480,7 @@ AuraTab:AddToggle({
 })
 
 
-if not getgenv().tamariLoop then
+if not getgenv().tamariLoop then 
 	getgenv().tamariLoop = nil
 end
 
@@ -3504,60 +3504,151 @@ AuraTab:AddToggle({
 		local function startTamariLoop()
 			resetTamari()
 			getgenv().tamariLoop = task.spawn(function()
+				local lastTarget = nil
+
 				while getgenv().Tamari do
-					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-						local target = nil
+					repeat task.wait() until plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
 
-						if getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "" then
-							local selected = game.Players:FindFirstChild(getgenv().selectedPlayerName)
-							if selected and selected.Character then
-								target = selected.Character
+
+					local hackVal = plr:FindFirstChild("hacktanbgasd12312312")
+					if hackVal and hackVal:IsA("IntValue") then
+
+						if hackVal.Value >= 5 then
+
+							while getgenv().Tamari and hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 do
+								task.wait(0.5)
 							end
-						end
 
-						if not target then
-							target = getclosestSkills(Workspace.Mobs)
-						end
-
-						while not target and getgenv().Tamari do
-							task.wait(0.5)
-							target = getclosestSkills(Workspace.Mobs)
-						end
-
-						local modelCFrame = nil
-						if target then
-							if target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								modelCFrame = target:GetModelCFrame()
-							elseif target:FindFirstChild("HumanoidRootPart") then
-								modelCFrame = target.HumanoidRootPart.CFrame
-							end
-						end
-
-						while not modelCFrame and getgenv().Tamari do
-							task.wait(0.5)
-							if target and target.GetModelCFrame and type(target.GetModelCFrame) == "function" then
-								modelCFrame = target:GetModelCFrame()
-							elseif target and target:FindFirstChild("HumanoidRootPart") then
-								modelCFrame = target.HumanoidRootPart.CFrame
-							end
-							if not target then break end
-						end
-
-						local humanoid = target and target:FindFirstChildOfClass("Humanoid")
-						if modelCFrame and humanoid and humanoid.Health > 0 then
-							ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
-								"Tamari_Normal_Throw_Damage_new",
-								plr.Character,
-								modelCFrame,
-								target
-							)
-							task.wait(3)
 						end
 					end
+
+
+					local currentTarget = nil
+
+					if getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "" then
+						local selected = game.Players:FindFirstChild(getgenv().selectedPlayerName)
+						if selected and selected.Character then
+							currentTarget = selected.Character
+						end
+					end
+
+					if not currentTarget then
+						currentTarget = getclosestSkills(Workspace.Mobs)
+					end
+
+					if not currentTarget then
+						task.wait(0.5)
+						continue
+					end
+
+					if lastTarget and currentTarget == lastTarget then
+						task.wait(0.2)
+						continue
+					end
+
+					local modelCFrame = nil
+					while not modelCFrame and getgenv().Tamari and currentTarget do
+						if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
+							modelCFrame = currentTarget:GetModelCFrame()
+						elseif currentTarget:FindFirstChild("HumanoidRootPart") then
+							modelCFrame = currentTarget.HumanoidRootPart.CFrame
+						end
+						if not modelCFrame then task.wait(0.1) end
+					end
+
+					local humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
+					if not modelCFrame or not humanoid or humanoid.Health <= 0 then
+						task.wait(0.5)
+						continue
+					end
+
+					local distance = (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+					if distance >= 40 then
+						task.wait(0.5)
+						continue
+					end
+
+
+					hackVal = plr:FindFirstChild("hacktanbgasd12312312")
+					if hackVal and hackVal:IsA("IntValue") then
+						if hackVal.Value >= 5 then
+							while getgenv().Tamari and hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 do
+								task.wait(0.5)
+							end
+						end
+					end
+
+
+					task.wait(0.5)
+
+					if not (currentTarget and currentTarget.Parent) then
+						task.wait(0.1)
+						continue
+					end
+					if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
+						modelCFrame = currentTarget:GetModelCFrame()
+					elseif currentTarget:FindFirstChild("HumanoidRootPart") then
+						modelCFrame = currentTarget.HumanoidRootPart.CFrame
+					end
+					humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
+					distance = modelCFrame and (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude or math.huge
+
+					if humanoid and humanoid.Health > 0 and distance < 40 then
+						ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
+							"Tamari_Normal_Throw_Damage_new",
+							plr.Character,
+							modelCFrame,
+							currentTarget
+						)
+					end
+
+
+					hackVal = plr:FindFirstChild("hacktanbgasd12312312")
+					if hackVal and hackVal:IsA("IntValue") then
+						if hackVal.Value >= 5 then
+							while getgenv().Tamari and hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 do
+								task.wait(0.5)
+							end
+						end
+					end
+
+
+					task.wait(3)
+
+
+					if not (currentTarget and currentTarget.Parent) then
+						task.wait(0.5)
+						lastTarget = currentTarget
+						continue
+					end
+					if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
+						modelCFrame = currentTarget:GetModelCFrame()
+					elseif currentTarget:FindFirstChild("HumanoidRootPart") then
+						modelCFrame = currentTarget.HumanoidRootPart.CFrame
+					end
+					humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
+					distance = modelCFrame and (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude or math.huge
+
+					if humanoid and humanoid.Health > 0 and distance < 40 then
+						ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
+							"Tamari_Normal_Throw_Damage_new",
+							plr.Character,
+							modelCFrame,
+							currentTarget
+						)
+					end
+
+
+					lastTarget = currentTarget
+
+
+					task.wait(0.5)
 				end
+
 				resetTamari()
 			end)
 		end
+
 
 		task.spawn(function()
 			while task.wait() do
@@ -3571,7 +3662,7 @@ AuraTab:AddToggle({
 			end
 		end)
 
-		-- Luồng phụ kích hoạt skill
+
 		if v then
 			task.spawn(function()
 				while getgenv().Tamari do
@@ -3589,6 +3680,8 @@ AuraTab:AddToggle({
 		end
 	end
 })
+
+
 
 
 AuraTab:AddToggle({
@@ -4396,124 +4489,123 @@ Breathings:AddToggle({
 
 
 if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
-getgenv().AutoCollect = false
-getgenv().TP_SPEED = 200    
-getgenv().TP_DELAY = 0.25   
+	getgenv().AutoCollect = false
+	getgenv().TP_SPEED = 200    
+	getgenv().TP_DELAY = 0.25   
 
 
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+	local RunService = game:GetService("RunService")
+	local Players = game:GetService("Players")
+	local Workspace = game:GetService("Workspace")
 
-local Player = Players.LocalPlayer
-local Flowers = Workspace:WaitForChild("Demon_Flowers_Spawn")
+	local Player = Players.LocalPlayer
+	local Flowers = Workspace:WaitForChild("Demon_Flowers_Spawn")
 
-local FailedFlowers = {}
-local CollectingThread = nil
+	local FailedFlowers = {}
+	local CollectingThread = nil
 
 
-local function getNearestFlower()
-	local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-	if not hrp then return nil end
-	local nearest, dist = nil, math.huge
-	for _, flower in pairs(Flowers:GetChildren()) do
-		if flower:IsA("Model") and flower.Parent and (not FailedFlowers[flower] or tick() - FailedFlowers[flower] > 20) then
-			local pos = flower:GetPivot().Position
-			local d = (hrp.Position - pos).Magnitude
-			if d < dist then
-				dist = d
-				nearest = flower
+	local function getNearestFlower()
+		local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+		if not hrp then return nil end
+		local nearest, dist = nil, math.huge
+		for _, flower in pairs(Flowers:GetChildren()) do
+			if flower:IsA("Model") and flower.Parent and (not FailedFlowers[flower] or tick() - FailedFlowers[flower] > 20) then
+				local pos = flower:GetPivot().Position
+				local d = (hrp.Position - pos).Magnitude
+				if d < dist then
+					dist = d
+					nearest = flower
+				end
 			end
 		end
+		return nearest
 	end
-	return nearest
-end
 
 
-local function smoothMoveTo(position, speed)
-	local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-	if not hrp or not position then return end
-	local startPos = hrp.Position
-	local delta = position - startPos
-	local duration = delta.Magnitude / speed
-	local startTime = tick()
-	while tick() - startTime < duration and getgenv().AutoCollect do
-		local t = math.min((tick() - startTime) / duration, 1)
-		local nextPos = startPos + delta * t
+	local function smoothMoveTo(position, speed)
+		local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+		if not hrp or not position then return end
+		local startPos = hrp.Position
+		local delta = position - startPos
+		local duration = delta.Magnitude / speed
+		local startTime = tick()
+		while tick() - startTime < duration and getgenv().AutoCollect do
+			local t = math.min((tick() - startTime) / duration, 1)
+			local nextPos = startPos + delta * t
+			hrp.Velocity = Vector3.zero
+			hrp.CFrame = CFrame.new(nextPos)
+			RunService.Heartbeat:Wait()
+		end
 		hrp.Velocity = Vector3.zero
-		hrp.CFrame = CFrame.new(nextPos)
-		RunService.Heartbeat:Wait()
+		hrp.CFrame = CFrame.new(position)
 	end
-	hrp.Velocity = Vector3.zero
-	hrp.CFrame = CFrame.new(position)
-end
 
 
-local function interactWithPrompt(flower)
-	for _, obj in ipairs(flower:GetDescendants()) do
-		if obj:IsA("ProximityPrompt") then
-			local prompt = obj
-			prompt.HoldDuration = 0
-			prompt.MaxActivationDistance = 10
-			prompt:InputHoldBegin()
-			task.wait(0.5)
-			prompt:InputHoldEnd()
-			task.wait(0.3)
-			return not flower:IsDescendantOf(Workspace)
+	local function interactWithPrompt(flower)
+		for _, obj in ipairs(flower:GetDescendants()) do
+			if obj:IsA("ProximityPrompt") then
+				local prompt = obj
+				prompt.HoldDuration = 0
+				prompt.MaxActivationDistance = 10
+				prompt:InputHoldBegin()
+				task.wait(0.5)
+				prompt:InputHoldEnd()
+				task.wait(0.3)
+				return not flower:IsDescendantOf(Workspace)
+			end
 		end
+		return false
 	end
-	return false
-end
 
-
-local function startCollecting()
-	if CollectingThread then return end
-	CollectingThread = task.spawn(function()
-		while getgenv().AutoCollect do
-			pcall(function()
-				local flower = getNearestFlower()
-				if flower then
-					smoothMoveTo(flower:GetPivot().Position, TP_SPEED)
-					task.wait(TP_DELAY)
-					local success = interactWithPrompt(flower)
-					if not success then
-						FailedFlowers[flower] = tick()
+	local function startCollecting()
+		if CollectingThread then return end
+		CollectingThread = task.spawn(function()
+			while getgenv().AutoCollect do
+				pcall(function()
+					local flower = getNearestFlower()
+					if flower then
+						smoothMoveTo(flower:GetPivot().Position, TP_SPEED)
+						task.wait(TP_DELAY)
+						local success = interactWithPrompt(flower)
+						if not success then
+							FailedFlowers[flower] = tick()
+						end
+					else
+						task.wait(0.5)
 					end
-				else
-					task.wait(0.5)
-				end
-			end)
-			task.wait(0.2)
-		end
-		CollectingThread = nil
-	end)
-end
-
-
-local function stopCollecting()
-	getgenv().AutoCollect = false
-	if CollectingThread then
-		task.cancel(CollectingThread)
-		CollectingThread = nil
+				end)
+				task.wait(0.2)
+			end
+			CollectingThread = nil
+		end)
 	end
-end
 
 
-MiscSection:AddToggle({
-	Name = "Auto Collect Lilys",
-	Flag = "AutoLilyToggle",
-	Keybind = false,
-	Callback = function(enabled)
-		getgenv().AutoCollect = enabled
-		if enabled then
-			startCollecting()
-		else
-			stopCollecting()
+	local function stopCollecting()
+		getgenv().AutoCollect = false
+		if CollectingThread then
+			task.cancel(CollectingThread)
+			CollectingThread = nil
 		end
 	end
-})
 
-	end
+
+	MiscSection:AddToggle({
+		Name = "Auto Collect Lilys",
+		Flag = "AutoLilyToggle",
+		Keybind = false,
+		Callback = function(enabled)
+			getgenv().AutoCollect = enabled
+			if enabled then
+				startCollecting()
+			else
+				stopCollecting()
+			end
+		end
+	})
+
+end
 
 if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
 
