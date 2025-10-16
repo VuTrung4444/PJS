@@ -3501,153 +3501,109 @@ AuraTab:AddToggle({
 			end
 		end
 
-		local function startTamariLoop()
-			resetTamari()
-			getgenv().tamariLoop = task.spawn(function()
-				local lastTarget = nil
+local function startTamariLoop()
+	resetTamari()
+	getgenv().tamariLoop = task.spawn(function()
+		local lastTarget = nil
 
-				while getgenv().Tamari do
-					repeat task.wait() until plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+		while getgenv().Tamari do
+			repeat task.wait() until plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
 
-
-					local hackVal = plr:FindFirstChild("hacktanbgasd12312312")
-					if hackVal and hackVal:IsA("IntValue") then
-
-						if hackVal.Value >= 5 then
-
-							while getgenv().Tamari and hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 do
-								task.wait(0.5)
-							end
-
-						end
-					end
-
-
-					local currentTarget = nil
-
-					if getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "" then
-						local selected = game.Players:FindFirstChild(getgenv().selectedPlayerName)
-						if selected and selected.Character then
-							currentTarget = selected.Character
-						end
-					end
-
-					if not currentTarget then
-						currentTarget = getclosestSkills(Workspace.Mobs)
-					end
-
-					if not currentTarget then
+			local hackVal = plr:FindFirstChild("hacktanbgasd12312312")
+			if hackVal and hackVal:IsA("IntValue") then
+				if hackVal.Value >= 5 then
+					while getgenv().Tamari and hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 do
 						task.wait(0.5)
-						continue
 					end
+				end
+			end
 
-					if lastTarget and currentTarget == lastTarget then
-						task.wait(0.2)
-						continue
-					end
+			local currentTarget = nil
 
-					local modelCFrame = nil
-					while not modelCFrame and getgenv().Tamari and currentTarget do
-						if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
-							modelCFrame = currentTarget:GetModelCFrame()
-						elseif currentTarget:FindFirstChild("HumanoidRootPart") then
-							modelCFrame = currentTarget.HumanoidRootPart.CFrame
-						end
-						if not modelCFrame then task.wait(0.1) end
-					end
+			if getgenv().selectedPlayerName and getgenv().selectedPlayerName ~= "" then
+				local selected = game.Players:FindFirstChild(getgenv().selectedPlayerName)
+				if selected and selected.Character then
+					currentTarget = selected.Character
+				end
+			end
 
-					local humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
-					if not modelCFrame or not humanoid or humanoid.Health <= 0 then
+			if not currentTarget then
+				currentTarget = getclosestSkills(Workspace.Mobs)
+			end
+
+			if not currentTarget then
+				task.wait(0.5)
+				continue
+			end
+
+			if lastTarget and currentTarget == lastTarget then
+				task.wait(0.2)
+				continue
+			end
+
+			local modelCFrame = nil
+			while not modelCFrame and getgenv().Tamari and currentTarget do
+				if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
+					modelCFrame = currentTarget:GetModelCFrame()
+				elseif currentTarget:FindFirstChild("HumanoidRootPart") then
+					modelCFrame = currentTarget.HumanoidRootPart.CFrame
+				end
+				if not modelCFrame then task.wait(0.1) end
+			end
+
+			local humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
+			if not modelCFrame or not humanoid or humanoid.Health <= 0 then
+				task.wait(0.5)
+				continue
+			end
+
+			local distance = (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+			if distance >= 40 then
+				task.wait(0.5)
+				continue
+			end
+
+			while getgenv().Tamari and humanoid and humanoid.Health > 0 do
+				hackVal = plr:FindFirstChild("hacktanbgasd12312312")
+				if hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 then
+					repeat
 						task.wait(0.5)
-						continue
-					end
-
-					local distance = (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude
-					if distance >= 40 then
-						task.wait(0.5)
-						continue
-					end
-
-
-					hackVal = plr:FindFirstChild("hacktanbgasd12312312")
-					if hackVal and hackVal:IsA("IntValue") then
-						if hackVal.Value >= 5 then
-							while getgenv().Tamari and hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 do
-								task.wait(0.5)
-							end
-						end
-					end
-
-
-					task.wait(1)
-
-					if not (currentTarget and currentTarget.Parent) then
-						task.wait(0.1)
-						continue
-					end
-					if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
-						modelCFrame = currentTarget:GetModelCFrame()
-					elseif currentTarget:FindFirstChild("HumanoidRootPart") then
-						modelCFrame = currentTarget.HumanoidRootPart.CFrame
-					end
-					humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
-					distance = modelCFrame and (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude or math.huge
-
-					if humanoid and humanoid.Health > 0 and distance < 40 then
-						ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
-							"Tamari_Normal_Throw_Damage_new",
-							plr.Character,
-							modelCFrame,
-							currentTarget
-						)
-					end
-
-
-					hackVal = plr:FindFirstChild("hacktanbgasd12312312")
-					if hackVal and hackVal:IsA("IntValue") then
-						if hackVal.Value >= 5 then
-							while getgenv().Tamari and hackVal and hackVal:IsA("IntValue") and hackVal.Value >= 5 do
-								task.wait(0.5)
-							end
-						end
-					end
-
-
-					task.wait(2)
-
-
-					if not (currentTarget and currentTarget.Parent) then
-						task.wait(0.5)
-						lastTarget = currentTarget
-						continue
-					end
-					if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
-						modelCFrame = currentTarget:GetModelCFrame()
-					elseif currentTarget:FindFirstChild("HumanoidRootPart") then
-						modelCFrame = currentTarget.HumanoidRootPart.CFrame
-					end
-					humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
-					distance = modelCFrame and (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude or math.huge
-
-					if humanoid and humanoid.Health > 0 and distance < 40 then
-						ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
-							"Tamari_Normal_Throw_Damage_new",
-							plr.Character,
-							modelCFrame,
-							currentTarget
-						)
-					end
-
-
-					lastTarget = currentTarget
-
-
-					task.wait(0.5)
+					until not hackVal or not hackVal:IsA("IntValue") or hackVal.Value < 5 or not getgenv().Tamari
 				end
 
-				resetTamari()
-			end)
+				if not currentTarget or not currentTarget.Parent then break end
+
+				if currentTarget.GetModelCFrame and type(currentTarget.GetModelCFrame) == "function" then
+					modelCFrame = currentTarget:GetModelCFrame()
+				elseif currentTarget:FindFirstChild("HumanoidRootPart") then
+					modelCFrame = currentTarget.HumanoidRootPart.CFrame
+				end
+
+				humanoid = currentTarget:FindFirstChildOfClass("Humanoid")
+				distance = modelCFrame and (modelCFrame.Position - plr.Character.HumanoidRootPart.Position).Magnitude or math.huge
+
+				if humanoid and humanoid.Health > 0 and distance < 40 then
+					ReplicatedStorage.Remotes.To_Server.Handle_Initiate_S:FireServer(
+						"Tamari_Normal_Throw_Damage_new",
+						plr.Character,
+						modelCFrame,
+						currentTarget
+					)
+				else
+					break
+				end
+
+				task.wait(1.5) 
+			end
+
+			lastTarget = currentTarget
+			task.wait(0.5)
 		end
+
+		resetTamari()
+	end)
+end
+
 
 
 		task.spawn(function()
