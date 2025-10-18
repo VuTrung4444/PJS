@@ -2341,7 +2341,7 @@ local Player = Players.LocalPlayer
 
 getgenv().AutoMoveEnabled = false
 
-local CHECK_INTERVAL = 10
+local CHECK_INTERVAL = 20
 local SPEED = 100 
 
 local function tweenToPosition(position)
