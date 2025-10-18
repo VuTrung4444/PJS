@@ -2341,7 +2341,7 @@ local Player = Players.LocalPlayer
 
 getgenv().AutoMoveEnabled = false
 
-local CHECK_INTERVAL = 40
+local CHECK_INTERVAL = 10
 local SPEED = 100 
 
 local function tweenToPosition(position)
@@ -2371,7 +2371,7 @@ local function getThreeMobPositions()
     local positions = {}
 
     for _, mob in ipairs(mobsFolder:GetChildren()) do
-        if #positions >= 3 then break end
+        if #positions >= 1 then break end
 
         local config = mob:FindFirstChild("Npc_Configuration")
         local spawnValue = config and config:FindFirstChild("spawnlocaitonasd123")
