@@ -674,7 +674,7 @@ local lastCharacter = nil
 
 local function findMob(requireHRP)
     for _, mob in pairs(Workspace.Mobs:GetDescendants()) do
-        if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+        if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 1 then
             if requireHRP then
                 if mob:FindFirstChild("HumanoidRootPart") then
                     return mob
