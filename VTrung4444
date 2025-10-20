@@ -1190,7 +1190,7 @@ MainSection:AddToggle({
 
             local valuePerRarity = {
                 ["Common"] = 100,
-                ["Uncommon"] = 250,
+                ["UnCommon"] = 180,
                 ["Rare"] = 500,
                 ["Mythic"] = 3500
             }
