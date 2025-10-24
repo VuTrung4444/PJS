@@ -876,28 +876,25 @@ MainSection:AddToggle({
 	end
 })
 
-	--MoveAround--
-	local MoveLoop = nil
-	local MoveLoopRunning = false
-	local isTweening = false
-	local CurrentTween = nil
+--MoveAround--
+local MoveLoop = nil
+local MoveLoopRunning = false
+local isTweening = false
+local CurrentTween = nil
 
 local function startMoveLoop()
 	if MoveLoopRunning then return end
 	MoveLoopRunning = true
 
-
 	MoveLoop = task.spawn(function()
 		local player = game.Players.LocalPlayer
 		local character = player.Character or player.CharacterAdded:Wait()
-
 
 		while getgenv().MoveAround do
 
 			if not character or not character:FindFirstChild("HumanoidRootPart") then
 				character = player.CharacterAdded:Wait()
 				task.wait(1)
-
 			end
 
 			UpdateActiveBossLocations()
@@ -912,9 +909,11 @@ local function startMoveLoop()
 				local pos = boss.Position
 				local bossCFrame = CFrame.new(pos)
 
+				-- ✅ Hủy tween cũ (nếu có)
 				if CurrentTween then
 					CurrentTween:Cancel()
 					CurrentTween = nil
+					isTweening = false
 				end
 
 				isTweening = true
@@ -924,23 +923,24 @@ local function startMoveLoop()
 					task.wait(0.1)
 				until GetDistance(pos) < 20 or not getgenv().MoveAround
 
+				-- ✅ Hủy tween khi đến gần hoặc toggle off
 				if CurrentTween then
 					CurrentTween:Cancel()
 					CurrentTween = nil
+					isTweening = false
+				else
+					isTweening = false
 				end
 
-				isTweening = false
-
-				task.wait(1) 
+				task.wait(1)
 			end
 
-			task.wait(15) 
+			task.wait(15)
 		end
 
 		MoveLoopRunning = false
 	end)
 end
-
 
 function StopMoveAround()
 	getgenv().MoveAround = false
@@ -950,15 +950,16 @@ function StopMoveAround()
 		MoveLoop = nil
 	end
 
+	-- ✅ Hủy tween an toàn khi dừng
 	if CurrentTween then
 		CurrentTween:Cancel()
 		CurrentTween = nil
+		isTweening = false
 	end
 
 	MoveLoopRunning = false
 	isTweening = false
 end
-
 
 local player = game.Players.LocalPlayer
 player.CharacterAdded:Connect(function(newChar)
@@ -971,29 +972,31 @@ player.CharacterAdded:Connect(function(newChar)
 	end
 end)
 
-	MainSection:AddToggle({
-		Name = "Move Around [Arrow]",
-		Flag = "MoveAroundBosses",
-		Callback = function(v)
-			getgenv().MoveAround = v
-			if v then
-				if placeId == 13883279773 or placeId == 17387475546 or placeId == 13883059853 or placeId == 17387482786 then
-					task.delay(0.1, function()
-						if not MoveLoopRunning then
-							startMoveLoop()
-						end
-					end)
-				end
-			else
-				local plr = game.Players.LocalPlayer
-				if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-					local humanoid = plr.Character:FindFirstChildOfClass("Humanoid")
-					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-				end
-				StopMoveAround()
+MainSection:AddToggle({
+	Name = "Move Around [Arrow]",
+	Flag = "MoveAroundBosses",
+	Callback = function(v)
+		getgenv().MoveAround = v
+		if v then
+			if placeId == 13883279773 or placeId == 17387475546 or placeId == 13883059853 or placeId == 17387482786 then
+				task.delay(0.1, function()
+					if not MoveLoopRunning then
+						startMoveLoop()
+					end
+				end)
 			end
+		else
+			local plr = game.Players.LocalPlayer
+			if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+				local humanoid = plr.Character:FindFirstChildOfClass("Humanoid")
+				humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			end
+			StopMoveAround()
 		end
-	})
+	end
+})
+
+
 
 	MainSection:AddTextbox({
 		Name = 'Player Target',
