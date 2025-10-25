@@ -1274,7 +1274,7 @@ MainSection:AddToggle({
 	Settings:AddSlider({
 		Name = "Tween Speed",
 		Flag = "TweenSlider",
-		Value = 200,
+		Value = 100,
 		Min = 100,
 		Max = 500,
 		Textbox = true,
