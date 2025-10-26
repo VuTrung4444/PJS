@@ -4447,7 +4447,7 @@ Breathings:AddToggle({
 
 if game.PlaceId == 13883279773 or game.PlaceId == 17387475546 then
 	getgenv().AutoCollect = false
-	getgenv().TP_SPEED = 100    
+	getgenv().TP_SPEED = 150    
 	getgenv().TP_DELAY = 0.25   
 
 
