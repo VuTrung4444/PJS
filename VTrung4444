@@ -656,7 +656,7 @@
 
 
 	MainSection:AddToggle({
-		Name = "Arrow Aura [Near Mobs]",
+		Name = "Arrow Aura [Mục tiêu gần]",
 		Flag = "Arrow",
 		Callback = function (v)
 			getgenv().Arrow = v
@@ -717,14 +717,14 @@ local function startArrowAura()
 
                 game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(unpack(args))
             end
-            task.wait(0.3) 
+            task.wait(0.2) 
         end
     end)
 end
 
 
 MainSection:AddToggle({
-    Name = "Arrow Aura [NoLag]",
+    Name = "Arrow Aura [Cố định]",
     Flag = "ArrowAll",
     Callback = function(v)
         getgenv().AllArrow = v
@@ -2348,40 +2348,7 @@ MiscSection:AddToggle({
 		end
 	})
 
-local Noclip = nil
-local Clip = nil
 
-function noclip()
-    Clip = false
-    local function Nocl()
-        if Clip == false and game.Players.LocalPlayer.Character ~= nil then
-            for _,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                if v:IsA('BasePart') and v.CanCollide and v.Name ~= floatName then
-                    v.CanCollide = false
-                end
-            end
-        end
-        wait(0.21) 
-    end
-    Noclip = game:GetService('RunService').Stepped:Connect(Nocl)
-end
-
-function clip()
-    if Noclip then Noclip:Disconnect() end
-    Clip = true
-end
-
-Ect:AddToggle({
-    Name = "Toggle Noclip",
-    Default = false,
-    Callback = function(value)
-        if value then
-            noclip()
-        else
-            clip()
-        end
-    end
-})
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -2621,7 +2588,7 @@ Ect:AddToggle({
 	end
 })
 
-Settings:AddSlider({
+Ect:AddSlider({
 	Name = "Fly Speed",
 	Flag = "FlySpeedSlider",
 	Value = getgenv().FLY_SPEED,
@@ -2633,6 +2600,41 @@ Settings:AddSlider({
 	end
 })
 
+
+local Noclip = nil
+local Clip = nil
+
+function noclip()
+    Clip = false
+    local function Nocl()
+        if Clip == false and game.Players.LocalPlayer.Character ~= nil then
+            for _,v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                if v:IsA('BasePart') and v.CanCollide and v.Name ~= floatName then
+                    v.CanCollide = false
+                end
+            end
+        end
+        wait(0.21) 
+    end
+    Noclip = game:GetService('RunService').Stepped:Connect(Nocl)
+end
+
+function clip()
+    if Noclip then Noclip:Disconnect() end
+    Clip = true
+end
+
+Ect:AddToggle({
+    Name = "Toggle Noclip",
+    Default = false,
+    Callback = function(value)
+        if value then
+            noclip()
+        else
+            clip()
+        end
+    end
+})
 
 	Ect:AddButton({
 		Name = "Reset",
@@ -2906,7 +2908,6 @@ Settings:AddSlider({
 						end
 					end
 
-					-- Kiểm tra HP trước khi bắn
 					local humanoid = v and v:FindFirstChildOfClass("Humanoid")
 					if modelCFrame and humanoid and humanoid.Health > 0 then
 						game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S:FireServer(
