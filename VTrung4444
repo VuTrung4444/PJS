@@ -1027,7 +1027,7 @@ MainSection:AddToggle({
 
 
 	spawn(function()
-		while task.wait(1) do
+		while task.wait() do
 			if getgenv().TargetPlayersArrow then
 				local selectedPlayerName = getgenv().selectedPlayerName
 				if selectedPlayerName and selectedPlayerName ~= "" then
