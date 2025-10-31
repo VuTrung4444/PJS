@@ -1055,6 +1055,98 @@ MainSection:AddToggle({
 	end)
 
 
+MainSection:AddToggle({
+	Name = "Arrow Aura [Closest Player]",
+	Flag = "ArrowClosest",
+	Callback = function(v)
+		getgenv().ArrowAllPlayers = v
+	end
+})
+
+local plr = game.Players.LocalPlayer
+local arrowLoop = nil
+
+
+local function resetArrowAura()
+	if arrowLoop then
+		task.cancel(arrowLoop)
+		arrowLoop = nil
+	end
+end
+
+
+local function getClosestPlayer()
+	local closestPlayer = nil
+	local shortestDistance = math.huge
+	local localRoot = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+
+	if not localRoot then return nil end
+
+	for _, other in pairs(game.Players:GetPlayers()) do
+		if other ~= plr and other.Character and other.Character:FindFirstChild("HumanoidRootPart") then
+			local targetRoot = other.Character.HumanoidRootPart
+			local dist = (targetRoot.Position - localRoot.Position).Magnitude
+			local humanoid = other.Character:FindFirstChildOfClass("Humanoid")
+
+			if humanoid and humanoid.Health > 0 and dist < shortestDistance then
+				shortestDistance = dist
+				closestPlayer = other
+			end
+		end
+	end
+
+	return closestPlayer
+end
+
+
+local function startArrowAura()
+	resetArrowAura()
+	arrowLoop = task.spawn(function()
+		while getgenv().ArrowAllPlayers do
+			if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+				local targetPlayer = getClosestPlayer()
+
+				if targetPlayer and targetPlayer.Character then
+					local targetChar = targetPlayer.Character
+					local targetCFrame = targetChar:GetModelCFrame()
+					local humanoid = targetChar:FindFirstChildOfClass("Humanoid")
+
+					if targetCFrame and humanoid and humanoid.Health > 0 then
+						pcall(function()
+							game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S_:InvokeServer(
+								"arrow_knock_back_damage",
+								plr.Character,
+								targetCFrame,
+								targetChar,
+								200,
+								200
+							)
+						end)
+						task.wait(0.2)
+					end
+				else
+					task.wait(0.2)
+				end
+			end
+		end
+		resetArrowAura()
+	end)
+end
+
+
+spawn(function()
+	while task.wait() do
+		if getgenv().ArrowAllPlayers then
+			if not arrowLoop then
+				startArrowAura()
+			end
+		else
+			resetArrowAura()
+		end
+	end
+end)
+
+
 
 
 MainSection:AddToggle({
@@ -2462,8 +2554,17 @@ Ect:AddToggle({
     end
 })
 
-
-
+Ect:AddSlider({
+	Name = "Điều chỉnh auto dungeon (s)",
+	Flag = "AutoMoveInterval",
+	Value = CHECK_INTERVAL,
+	Min = 1,
+	Max = 60,
+	Textbox = true, 
+	Callback = function(Value)
+		CHECK_INTERVAL = tonumber(Value) or 10
+	end
+})
 
 
 getgenv().FLY_ENABLED = false
@@ -2483,12 +2584,12 @@ local humanoid = char:WaitForChild("Humanoid")
 local flyKeyDown, flyKeyUp
 local FLYING = false
 
-
+-- 🧍 Lấy HumanoidRootPart
 local function getRoot(character)
 	return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
 end
 
-
+-- 🛫 Hàm bắt đầu bay
 local function startFly()
 	local T = getRoot(char)
 	if not T then return end
@@ -2513,22 +2614,30 @@ local function startFly()
 	FLYING = true
 	humanoid.PlatformStand = true
 
+	-- 🔹 Logic bay cho cả PC + Mobile
 	task.spawn(function()
 		while FLYING do
 			RunService.RenderStepped:Wait()
 			local cam = workspace.CurrentCamera
+			local moveDir = Vector3.zero
 
+			-- 💻 PC (WASD + QE)
 			if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then
-				SPEED = getgenv().FLY_SPEED
-			else
-				SPEED = 0
+				moveDir = (cam.CFrame.LookVector * (CONTROL.F + CONTROL.B)) +
+					((cam.CFrame * CFrame.new(CONTROL.L + CONTROL.R, (CONTROL.Q + CONTROL.E) * 0.5, 0).Position) - cam.CFrame.Position)
 			end
 
-			if (CONTROL.L + CONTROL.R) ~= 0 or (CONTROL.F + CONTROL.B) ~= 0 or (CONTROL.Q + CONTROL.E) ~= 0 then
-				BV.Velocity = (
-					(cam.CFrame.LookVector * (CONTROL.F + CONTROL.B)) +
-					((cam.CFrame * CFrame.new(CONTROL.L + CONTROL.R, (CONTROL.F + CONTROL.B + CONTROL.Q + CONTROL.E) * 0.2, 0).Position) - cam.CFrame.Position)
-				) * SPEED
+			-- 📱 Mobile (Joystick)
+			if UserInputService.TouchEnabled then
+				local joyDir = humanoid.MoveDirection
+				if joyDir.Magnitude > 0 then
+					moveDir = cam.CFrame:VectorToWorldSpace(joyDir)
+				end
+			end
+
+			-- Tính vận tốc
+			if moveDir.Magnitude > 0 then
+				BV.Velocity = moveDir.Unit * getgenv().FLY_SPEED
 			else
 				BV.Velocity = Vector3.zero
 			end
@@ -2541,7 +2650,7 @@ local function startFly()
 		humanoid.PlatformStand = false
 	end)
 
-
+	-- 🎮 Phím PC
 	flyKeyDown = UserInputService.InputBegan:Connect(function(input, processed)
 		if processed then return end
 		local kc = input.KeyCode
@@ -2562,9 +2671,45 @@ local function startFly()
 		if kc == Enum.KeyCode.E then CONTROL.Q = 0 end
 		if kc == Enum.KeyCode.Q then CONTROL.E = 0 end
 	end)
+
+	-- 📱 Nút điều khiển lên/xuống
+	if UserInputService.TouchEnabled then
+		local ScreenGui = Instance.new("ScreenGui")
+		ScreenGui.Name = "FlyButtons"
+		ScreenGui.ResetOnSpawn = false
+		ScreenGui.Parent = game.CoreGui
+
+		local upButton = Instance.new("TextButton")
+		upButton.Text = "⬆️"
+		upButton.Size = UDim2.new(0, 80, 0, 80)
+		upButton.Position = UDim2.new(1, -90, 1, -200)
+		upButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+		upButton.BackgroundTransparency = 0.3
+		upButton.TextScaled = true
+		upButton.Parent = ScreenGui
+
+		local downButton = Instance.new("TextButton")
+		downButton.Text = "⬇️"
+		downButton.Size = UDim2.new(0, 80, 0, 80)
+		downButton.Position = UDim2.new(1, -90, 1, -110)
+		downButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+		downButton.BackgroundTransparency = 0.3
+		downButton.TextScaled = true
+		downButton.Parent = ScreenGui
+
+		upButton.MouseButton1Down:Connect(function() CONTROL.Q = CONTROL_SPEED * 2 end)
+		upButton.MouseButton1Up:Connect(function() CONTROL.Q = 0 end)
+		downButton.MouseButton1Down:Connect(function() CONTROL.E = -CONTROL_SPEED * 2 end)
+		downButton.MouseButton1Up:Connect(function() CONTROL.E = 0 end)
+
+		task.spawn(function()
+			while FLYING do task.wait() end
+			ScreenGui:Destroy()
+		end)
+	end
 end
 
-
+-- 🛑 Dừng bay
 local function stopFly()
 	FLYING = false
 	if flyKeyDown then flyKeyDown:Disconnect() end
@@ -2572,6 +2717,7 @@ local function stopFly()
 	if humanoid then humanoid.PlatformStand = false end
 end
 
+-- 🧠 Tích hợp vào UI Ect
 Ect:AddToggle({
 	Name = "Fly Mode",
 	Flag = "FlyToggle",
@@ -2597,6 +2743,7 @@ Ect:AddSlider({
 		getgenv().FLY_SPEED = tonumber(Value) or 50
 	end
 })
+
 
 
 local Noclip = nil
@@ -2941,7 +3088,7 @@ Ect:AddToggle({
 
 	spawn(function()
 		while task.wait() do
-			if getgenv().Arrow or getgenv().TargetPlayersArrow or getgenv().AllArrow then
+			if getgenv().Arrow or getgenv().TargetPlayersArrow or getgenv().AllArrow or getgenv().ArrowAllPlayers then
 				if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
 					game:GetService("ReplicatedStorage").Remotes.To_Server.Handle_Initiate_S_:InvokeServer("skil_ting_asd",game:GetService("Players").LocalPlayer,"arrow_knock_back",5)
 					task.wait(10)
@@ -2999,6 +3146,12 @@ local function updateLabels()
     local playerData = game:GetService("ReplicatedStorage").Player_Data[plr.Name]
     if playerData then
         local statText = ""
+
+		local hackVal = plr:FindFirstChild("hacktanbgasd12312312")
+        if hackVal and hackVal:IsA("IntValue") then
+            statText = statText .. "Biến kiểm soát [8 = kick]: " .. tostring(hackVal.Value) .. "\n"
+        end
+
         statText = statText .. "Clan: " .. tostring(playerData.Clan.Value) .. "\n"
         statText = statText .. "Race: " .. raceTable[playerData.Race.Value] .. "\n"
         statText = statText .. "Demon Art Spins: " .. tostring(playerData.Demon_art_Spins.Value) .. "\n"
@@ -3009,10 +3162,6 @@ local function updateLabels()
         local breathingProgressText = string.format("Breathing Progress: %d/%d", playerData.BreathingProgress[1].Value, playerData.BreathingProgress[2].Value)
         statText = statText .. breathingProgressText .. "\n"
 
-        local hackVal = plr:FindFirstChild("hacktanbgasd12312312")
-        if hackVal and hackVal:IsA("IntValue") then
-            statText = statText .. "Biến kiểm soát [8 = kick]: " .. tostring(hackVal.Value) .. "\n"
-        end
 
         infoLabel:Set(statText)
     end
