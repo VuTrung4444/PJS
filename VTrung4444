@@ -1820,56 +1820,6 @@ MiscSection:AddToggle({
 })
 
 
-MiscSection:AddToggle({
-	Name = "Auto Open Hell",
-	Flag = "AutoTP",
-	Keybind = false,
-	Callback = function(v)
-		if v == true and placeId == 11468034852 then
-			local RunService = game:GetService("RunService")
-			local Players = game:GetService("Players")
-			local Workspace = game:GetService("Workspace")
-
-			local Player = Players.LocalPlayer
-
-			local function smoothMoveTo(position, speed)
-				local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-				if not hrp or not position then return end
-
-				local startPos = hrp.Position
-				local delta = position - startPos
-				local duration = delta.Magnitude / speed
-				local startTime = tick()
-
-				while tick() - startTime < duration do
-					local t = math.min((tick() - startTime) / duration, 1)
-					local nextPos = startPos + delta * t
-					hrp.Velocity = Vector3.new(0, 0, 0)
-					hrp.CFrame = CFrame.new(nextPos)
-					RunService.Heartbeat:Wait()
-				end
-
-				hrp.Velocity = Vector3.new(0, 0, 0)
-				hrp.CFrame = CFrame.new(position)
-			end
-
-
-			coroutine.wrap(function()
-				local targetPos = Vector3.new(5549.56, -53.07, 2471.93)
-				smoothMoveTo(targetPos, 200)
-
-				task.wait(0.5)
-
-				local success, err = pcall(function()
-					local prox = Workspace:WaitForChild("HardMode"):WaitForChild("ProximityPrompt")
-					fireproximityprompt(prox)
-				end)
-
-			end)()
-		end
-	end
-})
-
 	MiscSection:AddToggle({
 		Name = "War Drums",
 		Value = false, 
@@ -1895,15 +1845,6 @@ MiscSection:AddToggle({
 		end
 	})
 
-
-	MiscSection:AddToggle({
-		Name = "Boss Damage Log Spoof",
-		Flag = "BDLS",
-		Keybind = false,
-		Callback = function (v)
-			getgenv().hide_userdmg = v
-		end
-	})
 
 	MiscSection:AddToggle({
 		Name = "Spin Arrow",
@@ -3141,17 +3082,6 @@ Ect:AddToggle({
 	end)
 
 
-	--// Damage Log Spoofer \\--
-	spawn(function()
-		while task.wait() do
-			if getgenv().hide_userdmg == true then
-				local user = game:GetService("Players").LocalPlayer.Name
-				if game:GetService("Players")[tostring(user)].PlayerGui["Pop_Ups"].Bosshp["Damage_Log"]:FindFirstChild(tostring(user)) then
-				game:GetService("Players")[tostring(user)].PlayerGui["Pop_Ups"].Bosshp["Damage_Log"][tostring(user)].txt.Text = "Blackout Blackout Blackout"
-				end
-			end
-		end
-	end)
 
 	--// Auto Med and Auto Split \\--
 	spawn(function()
